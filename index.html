@@ -1,0 +1,2304 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Giải Cứu Hoàng Tử Kiên & Công Chúa Mai Nam Sách - Play Together 3D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap');
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0f172a;
+            color: #f8fafc;
+            touch-action: none;
+        }
+
+        #game-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 1;
+        }
+
+        .pt-card {
+            background: rgba(15, 23, 42, 0.84);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.22);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+        }
+
+        .gold-gradient {
+            background: linear-gradient(135deg, #facc15 0%, #f59e0b 50%, #ea580c 100%);
+        }
+
+        .btn-game {
+            transition: transform 0.12s ease, filter 0.12s ease;
+            cursor: pointer;
+        }
+        .btn-game:hover {
+            filter: brightness(1.08);
+        }
+        .btn-game:active {
+            transform: scale(0.94);
+        }
+
+        /* Clean HUD mode hides non-essential panels while playing */
+        .clean-hud-active .hud-collapsible {
+            display: none !important;
+        }
+
+        /* MOBA Skill Buttons */
+        .moba-btn {
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.35);
+            transition: transform 0.1s ease;
+            cursor: pointer;
+        }
+        .moba-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* Floating nametag & speech bubble */
+        .world-nametag {
+            position: absolute;
+            pointer-events: none;
+            transform: translate(-50%, -100%);
+            white-space: nowrap;
+            z-index: 15;
+            text-align: center;
+        }
+
+        @keyframes floatUpFade {
+            0% { opacity: 1; transform: translate(-50%, 0) scale(0.9); }
+            100% { opacity: 0; transform: translate(-50%, -48px) scale(1.15); }
+        }
+        .dmg-popup {
+            position: absolute;
+            pointer-events: none;
+            font-weight: 900;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.95);
+            animation: floatUpFade 1.05s ease-out forwards;
+            z-index: 25;
+        }
+
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.4); }
+        ::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.6); border-radius: 9999px; }
+    </style>
+</head>
+<body class="relative w-full h-full overflow-hidden">
+
+    <!-- 3D MAIN CANVAS -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- FLOATING DAMAGE & PLAY TOGETHER NAMETAGS -->
+    <div id="world-labels" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
+    <div id="nametags-container" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
+
+    <!-- ========================================================= -->
+    <!-- LOBBY MENU: PLAY TOGETHER 3D CHARACTER + ROOM + DRESS-UP  -->
+    <!-- ========================================================= -->
+    <div id="menu-overlay" class="absolute inset-0 z-30 flex flex-col lg:flex-row items-stretch justify-between p-2 sm:p-3.5 pointer-events-none overflow-y-auto lg:overflow-hidden">
+        
+        <!-- LEFT PANEL: ROOM CREATION, PASSWORD, APPROVAL & DIFFICULTY -->
+        <div class="w-full lg:w-[320px] xl:w-[340px] flex flex-col gap-2 pointer-events-auto my-auto max-h-full overflow-y-auto pr-0.5">
+            <div class="pt-card rounded-3xl p-3 border-l-4 border-amber-400">
+                <div class="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wider text-amber-300 mb-0.5">
+                    <span><i class="fas fa-star mr-1"></i>Play Together 3D • Tối Đa 6 Người</span>
+                    <span class="bg-emerald-500/30 text-emerald-200 px-2 py-0.5 rounded-full">15 Màn • 60 FPS</span>
+                </div>
+                <h1 class="text-base sm:text-lg font-black leading-tight bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-pink-300 to-cyan-300">
+                    GIẢI CỨU HOÀNG TỬ KIÊN & CÔNG CHÚA MAI NAM SÁCH
+                </h1>
+                <p class="text-[11px] text-slate-200 mt-1 leading-snug">
+                    Nhặt <b>⭐ Khế Vàng & 🍲 Canh Cá Rô</b> trên đường để búp sức mạnh, vượt 5 Chương Nhà Trắng cứu Kiên & Mai đám cưới!
+                </p>
+            </div>
+
+            <div class="pt-card rounded-3xl p-3 flex flex-col gap-2">
+                <div class="flex items-center justify-between border-b border-slate-700/80 pb-1.5">
+                    <span class="text-xs font-black text-amber-300 uppercase flex items-center gap-1.5">
+                        <i class="fas fa-house-user"></i> Phòng Chơi Online (6 Người)
+                    </span>
+                    <div class="flex bg-slate-900 rounded-xl p-0.5 border border-slate-700 text-[11px] font-bold">
+                        <button type="button" id="tab-host-room" class="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 font-black">Tạo Phòng</button>
+                        <button type="button" id="tab-join-room" class="px-2.5 py-1 rounded-lg text-slate-300 hover:text-white">Tìm Phòng</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-300 uppercase block mb-0.5">Tên Nhân Vật</label>
+                    <input id="input-player-name" type="text" maxlength="18" value="Chiến Binh Nam Sách" 
+                        class="w-full bg-slate-900/90 border border-slate-600 focus:border-amber-400 rounded-xl px-3 py-1.5 text-xs font-bold text-white outline-none">
+                </div>
+
+                <!-- HOST SETTINGS -->
+                <div id="panel-host-settings" class="space-y-1.5">
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">Tên Phòng</label>
+                            <input id="input-room-code" type="text" maxlength="16" value="KIEN-MAI-VIP" 
+                                class="w-full bg-slate-900/90 border border-slate-700 focus:border-amber-400 rounded-xl px-2.5 py-1 text-xs font-black text-amber-400 uppercase outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">Mật Khẩu Phòng</label>
+                            <input id="input-room-pass" type="password" maxlength="12" placeholder="Trống = Tự do" 
+                                class="w-full bg-slate-900/90 border border-slate-700 focus:border-amber-400 rounded-xl px-2.5 py-1 text-xs font-bold text-emerald-300 outline-none">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between bg-slate-900/80 px-2.5 py-1 rounded-xl border border-slate-800">
+                        <div class="text-[11px] text-slate-200 font-semibold">
+                            <i class="fas fa-user-check text-amber-400 mr-1"></i> Chủ phòng phê duyệt người vào
+                        </div>
+                        <input id="toggle-require-approval" type="checkbox" checked class="w-4 h-4 accent-amber-500 rounded cursor-pointer">
+                    </div>
+                </div>
+
+                <!-- JOIN ROOM LIST -->
+                <div id="panel-join-list" class="hidden space-y-1.5">
+                    <div class="text-[10px] text-slate-400 font-bold uppercase">Danh sách phòng đang mở:</div>
+                    <div id="active-rooms-container" class="space-y-1.5 max-h-24 overflow-y-auto pr-1"></div>
+                </div>
+
+                <!-- Difficulty Selector -->
+                <div>
+                    <label class="text-[10px] font-bold text-slate-300 uppercase block mb-1">Chọn 3 Chế Độ Độ Khó</label>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <button type="button" data-diff="easy" class="diff-btn btn-game rounded-xl p-1.5 border-2 border-emerald-500 bg-emerald-500/20 text-left">
+                            <div class="font-black text-emerald-300 text-xs flex justify-between"><span>DỄ</span><i class="fas fa-seedling"></i></div>
+                            <div class="text-[9px] text-slate-300">Nhiều Khế & Cá</div>
+                        </button>
+                        <button type="button" data-diff="medium" class="diff-btn btn-game rounded-xl p-1.5 border border-slate-700 bg-slate-800/70 text-left">
+                            <div class="font-black text-amber-300 text-xs flex justify-between"><span>TRUNG BÌNH</span><i class="fas fa-fire"></i></div>
+                            <div class="text-[9px] text-slate-300">Chuẩn Cân Bằng</div>
+                        </button>
+                        <button type="button" data-diff="hard" class="diff-btn btn-game rounded-xl p-1.5 border border-slate-700 bg-slate-800/70 text-left">
+                            <div class="font-black text-rose-400 text-xs flex justify-between"><span>KHÓ</span><i class="fas fa-skull"></i></div>
+                            <div class="text-[9px] text-slate-300">Trùm Siêu Khỏe</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between bg-slate-900/70 px-2.5 py-1 rounded-xl border border-slate-800">
+                    <div class="text-[11px] text-slate-300">
+                        <i class="fas fa-users text-cyan-400 mr-1"></i> Tự động thêm đồng đội đủ 6 người
+                    </div>
+                    <input id="toggle-ai-bots" type="checkbox" checked class="w-4 h-4 accent-amber-500 rounded cursor-pointer">
+                </div>
+
+                <!-- MAIN START BUTTON (Dual bound via onclick & addEventListener so it never fails) -->
+                <button type="button" id="btn-start-game" onclick="window.startGameNow && window.startGameNow()" class="btn-game gold-gradient text-slate-950 font-black text-sm sm:text-base py-3 rounded-2xl shadow-lg shadow-amber-500/40 flex items-center justify-center gap-2 cursor-pointer border-2 border-white">
+                    <i class="fas fa-play text-base"></i> VÀO GAME CHƠI NGAY!
+                </button>
+            </div>
+        </div>
+
+        <!-- CENTER COLUMN: 3D CHARACTER LOBBY STAGE WITH ZOOM IN/OUT & ROTATE -->
+        <div class="flex-1 flex flex-col items-center justify-between py-1 pointer-events-none min-h-[250px] lg:min-h-0">
+            <div class="bg-white/95 text-slate-900 px-4 py-1.5 rounded-full text-xs font-black flex items-center gap-2 pointer-events-auto border-2 border-amber-400 shadow-lg">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                <span>SẢNH CHỜ 3D • THU PHÓNG & XOAY NHÂN VẬT TRỰC TIẾP</span>
+            </div>
+
+            <!-- Interactive Lobby Zoom Slider & Camera Preset Buttons -->
+            <div class="pt-card px-3.5 py-2.5 rounded-3xl flex flex-col items-center gap-2 pointer-events-auto mt-auto border border-amber-400/50">
+                <div class="flex items-center gap-2 w-64 sm:w-80">
+                    <button type="button" id="btn-lobby-zoom-in" class="w-8 h-8 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-sm flex items-center justify-center shadow" title="Phóng to mặt">
+                        <i class="fas fa-magnifying-glass-plus"></i>
+                    </button>
+                    <div class="flex-1 flex flex-col">
+                        <div class="flex justify-between text-[10px] font-extrabold text-amber-200 mb-0.5">
+                            <span>Phóng To Mặt & Mụn</span>
+                            <span id="lobby-zoom-label">Toàn Thân</span>
+                        </div>
+                        <input id="slider-lobby-zoom" type="range" min="1.35" max="5.5" step="0.05" value="3.2" 
+                            class="w-full accent-amber-400 cursor-pointer h-2 bg-slate-800 rounded-lg">
+                    </div>
+                    <button type="button" id="btn-lobby-zoom-out" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-sm flex items-center justify-center border border-slate-600" title="Thu nhỏ toàn thân">
+                        <i class="fas fa-magnifying-glass-minus"></i>
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-center gap-1.5">
+                    <button type="button" id="btn-lobby-rot-left" class="btn-game bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-xl text-[11px] font-bold text-slate-200 border border-slate-600">
+                        <i class="fas fa-rotate-left mr-1"></i>Xoay Trái
+                    </button>
+                    <button type="button" id="btn-lobby-zoom-face" class="btn-game bg-amber-500/25 hover:bg-amber-500/40 px-3 py-1 rounded-xl text-[11px] font-black text-amber-300 border border-amber-400/60">
+                        <i class="fas fa-face-smile-wink mr-1"></i>Soi Rõ Mặt & Mụn
+                    </button>
+                    <button type="button" id="btn-lobby-zoom-body" class="btn-game bg-cyan-500/25 hover:bg-cyan-500/40 px-3 py-1 rounded-xl text-[11px] font-black text-cyan-200 border border-cyan-400/60">
+                        <i class="fas fa-person mr-1"></i>Toàn Thân
+                    </button>
+                    <button type="button" id="btn-lobby-pose" class="btn-game bg-pink-500/25 hover:bg-pink-500/40 px-3 py-1 rounded-xl text-[11px] font-black text-pink-200 border border-pink-400/60">
+                        <i class="fas fa-heart mr-1"></i>Nhảy Tạo Dáng
+                    </button>
+                    <button type="button" id="btn-lobby-rot-right" class="btn-game bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-xl text-[11px] font-bold text-slate-200 border border-slate-600">
+                        Xoay Phải<i class="fas fa-rotate-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: CHARACTER CUSTOMIZATION (GENDER, HAIR, FACE, MOLE / MỤN CỨT RUỒI) -->
+        <div class="w-full lg:w-[320px] xl:w-[340px] pt-card rounded-3xl p-3 pointer-events-auto my-auto max-h-full overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-700/80 pb-2 mb-2">
+                <div>
+                    <h2 class="text-sm sm:text-base font-black text-white flex items-center gap-1.5">
+                        <i class="fas fa-wand-magic-sparkles text-pink-400"></i> TẠO NHÂN VẬT 3D
+                    </h2>
+                    <p class="text-[10px] text-slate-300">Tự động phóng cận mặt khi chỉnh mụn cứt ruồi</p>
+                </div>
+                <button type="button" id="btn-random-char" class="btn-game bg-pink-500/20 hover:bg-pink-500/30 border border-pink-400/50 text-pink-300 text-[11px] font-bold px-2.5 py-1 rounded-lg">
+                    <i class="fas fa-shuffle mr-1"></i>Ngẫu nhiên
+                </button>
+            </div>
+
+            <div class="space-y-2.5 text-xs">
+                <!-- Gender Selection -->
+                <div>
+                    <label class="text-[10px] font-bold text-slate-300 uppercase block mb-1">1. Giới Tính Nhân Vật</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="gender-male" class="btn-game py-1.5 rounded-xl font-black border-2 border-blue-400 bg-blue-500/25 text-blue-200 flex items-center justify-center gap-1.5">
+                            <i class="fas fa-mars"></i> NAM (Hoàng Tử)
+                        </button>
+                        <button type="button" id="gender-female" class="btn-game py-1.5 rounded-xl font-black border border-slate-700 bg-slate-800/70 text-slate-300 flex items-center justify-center gap-1.5">
+                            <i class="fas fa-venus"></i> NỮ (Công Chúa)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hair Style & Face Expression -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-300 uppercase block mb-1">2. Kiểu Tóc 3D</label>
+                        <select id="select-hair-style" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 font-bold text-white outline-none focus:border-amber-400">
+                            <option value="spiky">Tóc Vuốt Nhọn</option>
+                            <option value="sidepart">Tóc Rẽ Ngôi</option>
+                            <option value="long">Tóc Dài Hoàng Gia</option>
+                            <option value="twintail">Tóc Buộc 2 Chùm</option>
+                            <option value="bun">Tóc Búi Cao</option>
+                            <option value="afro">Tóc Xù Cá Tính</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-300 uppercase block mb-1">3. Khuôn Mặt</label>
+                        <select id="select-face-style" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 font-bold text-white outline-none focus:border-amber-400">
+                            <option value="heroic">Cười Tự Tin</option>
+                            <option value="cute">Mắt Long Lanh</option>
+                            <option value="cool">Ngầu Lạnh Lùng</option>
+                            <option value="happy">Tươi Rạng Rỡ</option>
+                            <option value=" fierce">Quyết Chiến</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Hair Color & Outfit Color -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-300 uppercase block mb-1">Màu Tóc</label>
+                        <div class="flex items-center gap-1.5" id="hair-color-palette">
+                            <button type="button" data-color="#111827" class="w-5 h-5 rounded-full bg-gray-900 ring-2 ring-amber-400"></button>
+                            <button type="button" data-color="#78350f" class="w-5 h-5 rounded-full bg-amber-900"></button>
+                            <button type="button" data-color="#facc15" class="w-5 h-5 rounded-full bg-yellow-400"></button>
+                            <button type="button" data-color="#ef4444" class="w-5 h-5 rounded-full bg-red-500"></button>
+                            <button type="button" data-color="#ec4899" class="w-5 h-5 rounded-full bg-pink-500"></button>
+                            <button type="button" data-color="#38bdf8" class="w-5 h-5 rounded-full bg-sky-400"></button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-300 uppercase block mb-1">Màu Trang Phục</label>
+                        <div class="flex items-center gap-1.5" id="outfit-color-palette">
+                            <button type="button" data-outfit="#2563eb" class="w-5 h-5 rounded-full bg-blue-600 ring-2 ring-amber-400"></button>
+                            <button type="button" data-outfit="#db2777" class="w-5 h-5 rounded-full bg-pink-600"></button>
+                            <button type="button" data-outfit="#16a34a" class="w-5 h-5 rounded-full bg-green-600"></button>
+                            <button type="button" data-outfit="#eab308" class="w-5 h-5 rounded-full bg-yellow-500"></button>
+                            <button type="button" data-outfit="#9333ea" class="w-5 h-5 rounded-full bg-purple-600"></button>
+                            <button type="button" data-outfit="#e11d48" class="w-5 h-5 rounded-full bg-rose-600"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MOLE / BEAUTY MARK ("MỤN CỨT RUỒI") STUDIO -->
+                <div class="bg-slate-900/95 border border-amber-400/50 rounded-2xl p-2.5 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-black text-amber-300 uppercase flex items-center gap-1">
+                            <i class="fas fa-circle-dot"></i> 4. Mụn Cứt Ruồi Phong Thủy
+                        </span>
+                        <span id="mole-badge" class="text-[10px] font-bold text-emerald-300">Má phải duyên dáng</span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-1 text-[10px] font-bold">
+                        <button type="button" data-mole="none" class="mole-btn py-1 px-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300">Không có</button>
+                        <button type="button" data-mole="right_cheek" class="mole-btn py-1 px-1.5 rounded-lg border-2 border-amber-400 bg-amber-500/20 text-amber-200">Má Phải</button>
+                        <button type="button" data-mole="left_cheek" class="mole-btn py-1 px-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300">Má Trái</button>
+                        <button type="button" data-mole="under_eye" class="mole-btn py-1 px-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300">Dưới Mắt</button>
+                        <button type="button" data-mole="mouth_corner" class="mole-btn py-1 px-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300">Khóe Miệng</button>
+                        <button type="button" data-mole="forehead" class="mole-btn py-1 px-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300">Giữa Trán</button>
+                    </div>
+
+                    <div class="flex items-center gap-2 pt-0.5">
+                        <span class="text-[10px] text-slate-300 font-bold whitespace-nowrap">Độ to mụn:</span>
+                        <input id="slider-mole-size" type="range" min="1" max="4.5" step="0.25" value="2.2" class="w-full accent-amber-400 cursor-pointer h-1.5">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- IN-GAME HUD OVERLAY (PLAY TOGETHER CLEAN VIEW + MOBA)     -->
+    <!-- ========================================================= -->
+    <div id="hud-overlay" class="hidden clean-hud-active absolute inset-0 z-20 pointer-events-none flex flex-col justify-between p-2 sm:p-3">
+        
+        <!-- TOP BAR -->
+        <div class="flex items-start justify-between gap-2 w-full">
+            <!-- Top-Left: Compact Player Status + Khế & Canh Cá Rô Buffs -->
+            <div class="flex flex-col gap-1.5 pointer-events-auto">
+                <div class="flex items-start gap-2">
+                    <!-- Radar Minimap (Hidden in Clean Mode unless expanded) -->
+                    <div class="hud-collapsible pt-card rounded-2xl p-1.5 border border-amber-400/40 flex flex-col items-center">
+                        <canvas id="minimap-canvas" width="84" height="84" class="rounded-xl bg-slate-950 border border-slate-700"></canvas>
+                        <div class="text-[8px] font-black text-amber-300 mt-0.5 uppercase">Radar Nhà Trắng</div>
+                    </div>
+
+                    <div class="pt-card rounded-2xl p-2 flex flex-col gap-1 w-48 sm:w-56">
+                        <div class="flex items-center justify-between text-[10px] font-black">
+                            <span class="text-amber-300 truncate"><i class="fas fa-crown mr-1"></i><span id="hud-room-code">KIEN-MAI-VIP</span></span>
+                            <span id="hud-diff-badge" class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300">DỄ</span>
+                            <span class="text-slate-300"><i class="fas fa-users text-[9px] mr-0.5"></i><span id="hud-player-count">6</span>/6</span>
+                        </div>
+
+                        <div class="space-y-0.5">
+                            <div class="flex justify-between text-[10px] font-bold">
+                                <span id="hud-my-name" class="text-cyan-300 truncate">Chiến Binh</span>
+                                <span id="hud-hp-text" class="text-emerald-400">100/100</span>
+                            </div>
+                            <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-700">
+                                <div id="hud-hp-bar" class="h-full bg-gradient-to-r from-emerald-500 to-lime-400 transition-all duration-150" style="width: 100%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Food Buff Buttons: Ăn Khế Vàng & Húp Canh Cá Rô -->
+                        <div class="flex items-center gap-1 pt-0.5">
+                            <button type="button" id="btn-eat-khe" class="btn-game flex-1 bg-amber-500/25 hover:bg-amber-500/40 border border-amber-400/70 rounded-lg px-1.5 py-1 flex items-center justify-between text-[10px] font-black text-amber-200">
+                                <span>⭐ Khế: <b id="hud-khe-count">2</b></span>
+                                <span id="hud-khe-timer" class="text-[9px] text-emerald-300">Ăn</span>
+                            </button>
+                            <button type="button" id="btn-eat-canh" class="btn-game flex-1 bg-cyan-500/25 hover:bg-cyan-500/40 border border-cyan-400/70 rounded-lg px-1.5 py-1 flex items-center justify-between text-[10px] font-black text-cyan-200">
+                                <span>🍲 Cá Rô: <b id="hud-canh-count">2</b></span>
+                                <span id="hud-canh-timer" class="text-[9px] text-emerald-300">Húp</span>
+                            </button>
+                        </div>
+
+                        <!-- Squad List (Hidden in Clean HUD) -->
+                        <div id="hud-squad-list" class="hud-collapsible grid grid-cols-2 gap-1 text-[9px] pt-1 border-t border-slate-700/60"></div>
+
+                        <!-- Host Approval Popup -->
+                        <div id="host-approval-box" class="hidden bg-amber-500/20 border border-amber-400 rounded-xl p-1.5 text-[10px]">
+                            <div class="font-black text-amber-300 flex items-center justify-between">
+                                <span><i class="fas fa-user-clock mr-1"></i>Xin vào phòng:</span>
+                                <span id="approval-count-badge" class="bg-amber-400 text-slate-950 px-1.5 rounded-full font-black">1</span>
+                            </div>
+                            <div id="approval-candidate-name" class="text-white font-bold truncate my-0.5">Hiệp Sĩ Chí Linh</div>
+                            <div class="flex gap-1 mt-1">
+                                <button type="button" id="btn-approve-join" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-0.5 rounded-lg">Duyệt</button>
+                                <button type="button" id="btn-reject-join" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold py-0.5 rounded-lg">Từ chối</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top-Center: Story Chapter & Objective Banner -->
+            <div class="pt-card rounded-2xl px-3 py-1.5 pointer-events-auto flex flex-col items-center text-center max-w-sm w-full border-t-2 border-amber-400 mx-auto">
+                <div class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-300">
+                    <span id="hud-chapter-title">CHƯƠNG 1: CỔNG NHÀ TRẮNG</span>
+                    <span class="bg-amber-500/25 border border-amber-400/50 text-amber-200 px-1.5 py-0.2 rounded-full" id="hud-stage-badge">Màn 1/15</span>
+                </div>
+                <p id="hud-objective-text" class="text-[11px] font-bold text-white mt-0.5 leading-tight">
+                    Đánh bại Đội Bảo Vệ Cổng Nhà Trắng để mở đường!
+                </p>
+                <div class="w-full bg-slate-950 h-1.5 rounded-full mt-1 overflow-hidden border border-slate-700">
+                    <div id="hud-chapter-progress" class="h-full gold-gradient transition-all duration-300" style="width: 15%;"></div>
+                </div>
+                <div class="hud-collapsible flex items-center gap-1 mt-1 text-[9px]">
+                    <span class="text-slate-400">Chuyển Chương:</span>
+                    <button type="button" onclick="window.jumpToChapter(1)" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-amber-500 hover:text-black font-bold">1</button>
+                    <button type="button" onclick="window.jumpToChapter(2)" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-amber-500 hover:text-black font-bold">2</button>
+                    <button type="button" onclick="window.jumpToChapter(3)" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-amber-500 hover:text-black font-bold">3</button>
+                    <button type="button" onclick="window.jumpToChapter(4)" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-amber-500 hover:text-black font-bold">4</button>
+                    <button type="button" onclick="window.jumpToChapter(5)" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-amber-500 hover:text-black font-bold">5</button>
+                    <button type="button" id="btn-sim-join-req" class="ml-1 px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold">+Duyệt TV</button>
+                </div>
+            </div>
+
+            <!-- Top-Right: Clean HUD Toggle + Zoom In/Out + Back to Lobby -->
+            <div class="flex flex-col items-end gap-1 pointer-events-auto">
+                <div class="flex items-center gap-1">
+                    <div class="hud-collapsible pt-card px-2 py-1 rounded-xl text-[10px] font-bold flex items-center gap-1 text-emerald-400">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                        <span id="hud-fps">60 FPS</span>
+                    </div>
+
+                    <button type="button" id="btn-clean-hud" class="btn-game pt-card px-2.5 py-1.5 rounded-xl text-[11px] font-black text-emerald-300 border border-emerald-400/50 flex items-center gap-1">
+                        <i id="clean-hud-icon" class="fas fa-eye"></i>
+                        <span id="clean-hud-label" class="hidden sm:inline">Gọn Màn Hình</span>
+                    </button>
+
+                    <button type="button" id="btn-open-menu" class="btn-game pt-card px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-amber-300 hover:text-white">
+                        <i class="fas fa-shirt mr-1"></i><span class="hidden sm:inline">Sảnh</span>
+                    </button>
+                </div>
+
+                <!-- In-Game Camera Zoom Controls -->
+                <div class="pt-card px-2 py-1 rounded-xl flex items-center gap-1">
+                    <button type="button" id="btn-zoom-in" title="Phóng to" class="w-6 h-6 rounded-lg bg-amber-400 text-slate-950 text-xs font-black flex items-center justify-center">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <input id="slider-cam-zoom" type="range" min="4.0" max="20" step="0.5" value="9.5" class="w-14 sm:w-20 accent-amber-400 cursor-pointer h-1.5">
+                    <button type="button" id="btn-zoom-out" title="Thu nhỏ" class="w-6 h-6 rounded-lg bg-slate-800 text-white text-xs font-black flex items-center justify-center">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER INTERACTIVE MODALS (CHAPTER 3 PUZZLE & CHAPTER 5 WEDDING FINALE) -->
+        <div class="flex flex-col items-center justify-center my-auto pointer-events-none">
+            <!-- Chapter 3 Security Puzzle Modal -->
+            <div id="puzzle-modal" class="hidden pt-card rounded-3xl p-4 max-w-sm w-full border-2 border-cyan-400 pointer-events-auto text-center space-y-2.5">
+                <div class="text-xs font-black text-cyan-300 uppercase">
+                    <i class="fas fa-microchip mr-1"></i> Giải Mã An Ninh Nhà Trắng (Chương 3)
+                </div>
+                <p id="puzzle-question" class="text-sm font-bold text-white"></p>
+                <div id="puzzle-options" class="grid grid-cols-1 gap-1.5"></div>
+                <button type="button" id="btn-close-puzzle" class="text-[11px] text-slate-400 hover:text-white underline">Đóng lại</button>
+            </div>
+
+            <!-- Chapter 5 Royal Wedding Finale Banner -->
+            <div id="wedding-banner" class="hidden pt-card rounded-3xl p-5 max-w-md w-full border-2 border-pink-400 pointer-events-auto flex-col items-center text-center space-y-2.5">
+                <div class="text-3xl">👑💍💖🎉</div>
+                <h2 class="text-lg sm:text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-pink-300 to-cyan-300">
+                    ĐÁM CƯỚI HOÀNG TỬ KIÊN & CÔNG CHÚA MAI NAM SÁCH!
+                </h2>
+                <p class="text-xs text-slate-200 leading-relaxed">
+                    Chúc mừng đội của bạn đã vượt qua 5 Chương Nhà Trắng, đánh bại Tư Lệnh Tối Cao và tổ chức lễ cưới thế kỷ cho <b>Hoàng Tử Kiên & Công Chúa Mai Nam Sách</b>!
+                </p>
+                <div class="flex gap-2 pt-1">
+                    <button type="button" id="btn-fireworks-more" class="btn-game gold-gradient text-slate-950 font-black px-4 py-2 rounded-xl text-xs">
+                        🎆 Bắn Pháo Hoa Mừng Cưới
+                    </button>
+                    <button type="button" onclick="window.jumpToChapter(1)" class="btn-game bg-slate-800 hover:bg-slate-700 text-white font-bold px-4 py-2 rounded-xl text-xs border border-slate-600">
+                        Chơi Lại Từ Chương 1
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM ROW: JOYSTICK + MIC/CHAT (LEFT) & MOBA SKILL CLUSTER (RIGHT) -->
+        <div class="flex items-end justify-between w-full gap-2">
+            
+            <!-- Bottom-Left: Virtual Joystick + Compact Mic/Chat/Emotes -->
+            <div class="flex items-end gap-2.5 pointer-events-auto">
+                <!-- Analog Joystick -->
+                <div id="joystick-zone" class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-slate-900/65 border-2 border-white/25 flex items-center justify-center shadow-inner">
+                    <div id="joystick-knob" class="w-11 h-11 rounded-full gold-gradient shadow-lg border-2 border-white pointer-events-none transition-transform duration-75"></div>
+                </div>
+
+                <!-- Voice Mic, Sound, Chat & Play Together Emote Bar -->
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex flex-wrap items-center gap-1">
+                        <button type="button" id="btn-mic-toggle" class="btn-game pt-card px-2.5 py-1.5 rounded-full text-[11px] font-bold flex items-center gap-1 text-slate-100">
+                            <i id="mic-icon" class="fas fa-microphone-slash text-rose-400"></i>
+                            <span id="mic-label" class="hidden sm:inline">Mic Tắt</span>
+                            <div class="w-4 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                <div id="mic-level-bar" class="h-full bg-emerald-400" style="width: 0%;"></div>
+                            </div>
+                        </button>
+                        <button type="button" id="btn-sound-toggle" class="btn-game pt-card px-2.5 py-1.5 rounded-full text-[11px] font-bold text-amber-300">
+                            <i id="sound-icon" class="fas fa-volume-high"></i>
+                        </button>
+                        <button type="button" id="btn-toggle-chat" class="btn-game pt-card px-2.5 py-1.5 rounded-full text-[11px] font-bold text-cyan-300">
+                            <i class="fas fa-comment-dots mr-1"></i>Chat
+                        </button>
+                        <button type="button" id="btn-pt-emote" class="btn-game pt-card px-2.5 py-1.5 rounded-full text-[11px] font-bold text-pink-300">
+                            💃 Cảm xúc
+                        </button>
+                    </div>
+
+                    <!-- Collapsible Chat Drawer -->
+                    <div id="chat-drawer" class="hidden pt-card rounded-2xl p-2 w-60 sm:w-72 flex flex-col gap-1">
+                        <div class="flex gap-1 overflow-x-auto pb-1 text-[10px] font-bold">
+                            <button type="button" class="quick-chat-btn whitespace-nowrap bg-slate-800 hover:bg-amber-500 hover:text-black px-2 py-0.5 rounded-md">⭐ Ăn Khế & Cá Rô đi!</button>
+                            <button type="button" class="quick-chat-btn whitespace-nowrap bg-slate-800 hover:bg-amber-500 hover:text-black px-2 py-0.5 rounded-md">⚔️ Giải cứu Kiên & Mai!</button>
+                            <button type="button" class="quick-chat-btn whitespace-nowrap bg-slate-800 hover:bg-amber-500 hover:text-black px-2 py-0.5 rounded-md">💖 Đám cưới vui quá!</button>
+                        </div>
+                        <div id="chat-messages" class="h-20 overflow-y-auto space-y-0.5 text-[11px] pr-1"></div>
+                        <form id="chat-form" class="flex gap-1">
+                            <input id="chat-input" type="text" maxlength="100" placeholder="Chat hiện bong bóng trên đầu..." 
+                                class="w-full bg-slate-900/90 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-white outline-none focus:border-amber-400">
+                            <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-2.5 rounded-lg text-xs">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom-Right: PLAY TOGETHER JUMP + MOBA SKILL CLUSTER -->
+            <div class="relative w-48 h-48 sm:w-56 sm:h-56 pointer-events-auto select-none">
+                <!-- Jump Button -->
+                <button type="button" id="btn-jump" class="moba-btn absolute bottom-28 left-0 w-11 h-11 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 border-2 border-white text-white flex flex-col items-center justify-center">
+                    <i class="fas fa-arrow-up text-xs"></i>
+                    <span class="text-[8px] font-black">Nhảy</span>
+                </button>
+
+                <!-- Heal, Flash, Interact -->
+                <button type="button" id="btn-heal" class="moba-btn absolute bottom-2 left-2 w-10 h-10 rounded-full bg-emerald-600 border-2 border-emerald-300 text-white flex flex-col items-center justify-center">
+                    <i class="fas fa-heart-pulse text-xs"></i>
+                    <span id="cd-heal" class="text-[8px] font-black">Hồi</span>
+                </button>
+                <button type="button" id="btn-flash" class="moba-btn absolute bottom-14 left-4 w-10 h-10 rounded-full bg-amber-500 border-2 border-yellow-200 text-slate-950 flex flex-col items-center justify-center">
+                    <i class="fas fa-bolt text-xs"></i>
+                    <span id="cd-flash" class="text-[8px] font-black">Biến</span>
+                </button>
+                <button type="button" id="btn-interact" class="moba-btn absolute top-2 right-20 w-11 h-11 rounded-full bg-cyan-500 border-2 border-white text-slate-950 flex flex-col items-center justify-center">
+                    <i class="fas fa-hand-sparkles text-xs"></i>
+                    <span class="text-[8px] font-black">Mở/Cứu</span>
+                </button>
+
+                <!-- Skill 1, Skill 2, Ulti -->
+                <button type="button" id="btn-skill-1" class="moba-btn absolute bottom-3 left-16 w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-sky-600 border-2 border-sky-300 text-white flex flex-col items-center justify-center">
+                    <i class="fas fa-wind text-sm"></i>
+                    <span id="cd-skill1" class="text-[9px] font-black">Chiêu 1</span>
+                </button>
+                <button type="button" id="btn-skill-2" class="moba-btn absolute bottom-18 left-16 w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-indigo-600 border-2 border-indigo-300 text-white flex flex-col items-center justify-center" style="bottom: 4.5rem;">
+                    <i class="fas fa-shield-halved text-sm"></i>
+                    <span id="cd-skill2" class="text-[9px] font-black">Khiên</span>
+                </button>
+                <button type="button" id="btn-skill" class="moba-btn absolute top-6 right-3 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-rose-500 via-amber-500 to-yellow-400 border-2 border-white text-slate-950 flex flex-col items-center justify-center">
+                    <i class="fas fa-dragon text-base"></i>
+                    <span id="cd-ulti" class="text-[9px] font-black">ULTI</span>
+                </button>
+
+                <!-- Primary Normal Attack Button -->
+                <button type="button" id="btn-attack" class="moba-btn absolute bottom-2 right-2 w-20 h-20 sm:w-24 sm:h-24 rounded-full gold-gradient border-4 border-white text-slate-950 flex flex-col items-center justify-center shadow-2xl">
+                    <i class="fas fa-gavel text-2xl sm:text-3xl"></i>
+                    <span class="text-[10px] font-black uppercase tracking-tight">Đánh</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST MESSAGE -->
+    <div id="toast-box" class="fixed top-14 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-300 bg-slate-950/90 border-2 border-amber-400 text-amber-200 px-4 py-2 rounded-2xl text-xs font-black shadow-2xl"></div>
+
+    <!-- ========================================================= -->
+    <!-- MAIN GAME ENGINE SCRIPT (SELF-CONTAINED, ERROR-PROOF)     -->
+    <!-- ========================================================= -->
+    <script>
+        (function () {
+            // Safe DOM listener helper so missing/optional elements never throw errors
+            function on(id, evt, handler) {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener(evt, handler);
+                return el;
+            }
+
+            let toastTimeout = null;
+            function showToast(msg) {
+                const box = document.getElementById('toast-box');
+                if (!box) return;
+                box.textContent = msg;
+                box.classList.remove('opacity-0');
+                box.classList.add('opacity-100');
+                clearTimeout(toastTimeout);
+                toastTimeout = setTimeout(() => {
+                    box.classList.remove('opacity-100');
+                    box.classList.add('opacity-0');
+                }, 3200);
+            }
+
+            // =========================================================
+            // 1. SOUND SYNTHESIZER (WEB AUDIO API - NO EXTERNAL ASSETS)
+            // =========================================================
+            const sfx = {
+                ctx: null,
+                init() {
+                    if (!this.ctx) {
+                        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                        if (AudioCtx) this.ctx = new AudioCtx();
+                    }
+                    if (this.ctx && this.ctx.state === 'suspended') {
+                        this.ctx.resume().catch(() => {});
+                    }
+                },
+                playTone(freq, type = 'sine', dur = 0.12, vol = 0.12) {
+                    if (!state.soundEnabled) return;
+                    try {
+                        this.init();
+                        if (!this.ctx) return;
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = type;
+                        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start();
+                        osc.stop(this.ctx.currentTime + dur);
+                    } catch (e) {}
+                },
+                playAttack() { this.playTone(260, 'triangle', 0.11, 0.16); },
+                playSkill() {
+                    this.playTone(520, 'sawtooth', 0.18, 0.15);
+                    setTimeout(() => this.playTone(740, 'sine', 0.2, 0.15), 70);
+                },
+                playSuccess() {
+                    this.playTone(523, 'sine', 0.12, 0.15);
+                    setTimeout(() => this.playTone(659, 'sine', 0.14, 0.15), 90);
+                    setTimeout(() => this.playTone(784, 'sine', 0.22, 0.18), 180);
+                }
+            };
+
+            // =========================================================
+            // 2. GAME STATE & DIFFICULTY CONFIG
+            // =========================================================
+            const DIFFICULTY_SETTINGS = {
+                easy:   { label: 'DỄ',         enemyHpMult: 0.75, enemyDmgMult: 0.65, speedMult: 0.85 },
+                medium: { label: 'TRUNG BÌNH', enemyHpMult: 1.15, enemyDmgMult: 1.0,  speedMult: 1.0  },
+                hard:   { label: 'KHÓ',        enemyHpMult: 1.65, enemyDmgMult: 1.35, speedMult: 1.15 }
+            };
+
+            const state = {
+                inGame: false,
+                cleanHud: true, // Default ON: hides non-essential clutter while playing
+                roomCode: 'KIEN-MAI-VIP',
+                roomPass: '',
+                requireApproval: true,
+                isRoomHost: true,
+                pendingApprovals: [],
+                difficulty: 'easy',
+                fillWithBots: true,
+                chapter: 1,
+                stage: 1,
+                soundEnabled: true,
+                micEnabled: false,
+                camZoomDist: 9.5,
+                lobbyZoomDist: 3.2,
+                lobbyTargetHeight: 1.45,
+                lobbyManualYaw: 0,
+                lobbyPoseTimer: 0,
+                jumpY: 0,
+                jumpVel: 0,
+                mySpeechBubble: { text: '', timer: 0 },
+                foodSpawns: [],
+                kheInventory: 2,
+                canhInventory: 2,
+                kheBuffTimer: 0,
+                canhBuffTimer: 0,
+                cooldowns: { skill1: 0, skill2: 0, ulti: 0, flash: 0, heal: 0 },
+                shieldActiveTimer: 0,
+                myConfig: {
+                    id: 'p_' + Math.random().toString(36).substring(2, 8),
+                    name: 'Chiến Binh Nam Sách',
+                    gender: 'male',
+                    hairStyle: 'spiky',
+                    hairColor: '#111827',
+                    faceStyle: 'heroic',
+                    skinColor: '#fde68a',
+                    outfitColor: '#2563eb',
+                    molePos: 'right_cheek',
+                    moleSize: 2.2,
+                    hp: 100,
+                    maxHp: 100,
+                    x: 0,
+                    z: 35,
+                    rotY: Math.PI
+                },
+                enemies: [],
+                collectibles: [],
+                puzzleTerminals: [],
+                solvedPuzzles: 0,
+                collectedCount: 0,
+                rescuedKien: false,
+                rescuedMai: false,
+                aiBots: [],
+                otherPlayers: new Map()
+            };
+
+            // =========================================================
+            // 3. THREE.JS 3D SCENE & WHITE HOUSE WORLD
+            // =========================================================
+            const canvas = document.getElementById('game-canvas');
+            const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x38bdf8);
+            scene.fog = new THREE.FogExp2(0x38bdf8, 0.005);
+
+            const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.3, 220);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.88);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.DirectionalLight(0xfffbeb, 0.95);
+            sunLight.position.set(25, 45, 30);
+            scene.add(sunLight);
+
+            const worldGroup = new THREE.Group();
+            scene.add(worldGroup);
+
+            const dynamicGroup = new THREE.Group();
+            scene.add(dynamicGroup);
+
+            let gateGroup = null;
+            let frontDoorGroup = null;
+            let kienNpc = null;
+            let maiNpc = null;
+            let cageLaserMesh = null;
+            let lobbyPedestal = null;
+
+            const sharedGeo = {
+                head: new THREE.SphereGeometry(0.44, 18, 18),
+                torso: new THREE.CylinderGeometry(0.34, 0.42, 1.05, 14),
+                limb: new THREE.CylinderGeometry(0.13, 0.11, 0.72, 10),
+                eye: new THREE.SphereGeometry(0.062, 10, 10),
+                mole: new THREE.SphereGeometry(0.024, 10, 10)
+            };
+
+            function buildCharacterMesh(cfg) {
+                const root = new THREE.Group();
+                const skinMat = new THREE.MeshLambertMaterial({ color: cfg.skinColor || '#fde68a' });
+                const outfitMat = new THREE.MeshPhongMaterial({ color: cfg.outfitColor || '#2563eb', shininess: 35 });
+                const hairMat = new THREE.MeshPhongMaterial({ color: cfg.hairColor || '#111827', shininess: 50 });
+
+                // Legs
+                const leftLeg = new THREE.Mesh(sharedGeo.limb, outfitMat);
+                leftLeg.position.set(-0.18, 0.36, 0);
+                const rightLeg = new THREE.Mesh(sharedGeo.limb, outfitMat);
+                rightLeg.position.set(0.18, 0.36, 0);
+                root.add(leftLeg, rightLeg);
+
+                // Torso & Female Skirt
+                const torso = new THREE.Mesh(sharedGeo.torso, outfitMat);
+                torso.position.y = 1.22;
+                root.add(torso);
+
+                if (cfg.gender === 'female') {
+                    const skirt = new THREE.Mesh(new THREE.ConeGeometry(0.56, 0.62, 16), outfitMat);
+                    skirt.position.y = 0.82;
+                    root.add(skirt);
+                }
+
+                // Arms & Weapon
+                const leftArm = new THREE.Mesh(sharedGeo.limb, skinMat);
+                leftArm.position.set(-0.48, 1.24, 0);
+                leftArm.rotation.z = 0.2;
+                const rightArm = new THREE.Mesh(sharedGeo.limb, skinMat);
+                rightArm.position.set(0.48, 1.24, 0);
+                rightArm.rotation.z = -0.2;
+                root.add(leftArm, rightArm);
+
+                const sword = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.09, 0.85, 0.14),
+                    new THREE.MeshPhongMaterial({ color: 0xfacc15, emissive: 0xca8a04, emissiveIntensity: 0.3 })
+                );
+                sword.position.set(0, -0.35, 0.25);
+                sword.rotation.x = Math.PI / 3;
+                rightArm.add(sword);
+
+                // Chibi Play Together Head Group (Faces +Z)
+                const headGroup = new THREE.Group();
+                headGroup.position.y = 2.15;
+                headGroup.scale.setScalar(1.14);
+                root.add(headGroup);
+
+                const head = new THREE.Mesh(sharedGeo.head, skinMat);
+                headGroup.add(head);
+
+                // Pink Blush Cheeks
+                const blushMat = new THREE.MeshBasicMaterial({ color: 0xf472b6, transparent: true, opacity: 0.45 });
+                const blushGeo = new THREE.SphereGeometry(0.06, 8, 8);
+                const blushL = new THREE.Mesh(blushGeo, blushMat);
+                blushL.scale.set(1.2, 0.6, 0.3);
+                blushL.position.set(-0.23, -0.05, 0.41);
+                const blushR = blushL.clone();
+                blushR.position.x = 0.23;
+                headGroup.add(blushL, blushR);
+
+                // Eyes
+                const eyeScale = cfg.faceStyle === 'cute' ? 1.35 : 1.05;
+                const eyeMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
+                const eyeL = new THREE.Mesh(sharedGeo.eye, eyeMat);
+                eyeL.scale.setScalar(eyeScale);
+                eyeL.position.set(-0.15, 0.06, 0.41);
+                const eyeR = eyeL.clone();
+                eyeR.position.x = 0.15;
+                headGroup.add(eyeL, eyeR);
+
+                // Smile Mouth
+                const mouth = new THREE.Mesh(
+                    new THREE.TorusGeometry(0.075, 0.018, 8, 12, Math.PI),
+                    new THREE.MeshBasicMaterial({ color: 0xbe123c })
+                );
+                mouth.rotation.x = Math.PI;
+                mouth.position.set(0, -0.1, 0.42);
+                headGroup.add(mouth);
+
+                // MỤN CỨT RUỒI (Mole / Beauty Mark) directly on 3D Face
+                if (cfg.molePos && cfg.molePos !== 'none') {
+                    const moleMesh = new THREE.Mesh(sharedGeo.mole, new THREE.MeshBasicMaterial({ color: 0x1c1917 }));
+                    const mSize = Number(cfg.moleSize || 2.2) * 0.68;
+                    moleMesh.scale.setScalar(mSize);
+
+                    const moleCoords = {
+                        right_cheek:  [0.24, -0.06, 0.415],
+                        left_cheek:   [-0.24, -0.06, 0.415],
+                        under_eye:    [0.17, -0.02, 0.425],
+                        mouth_corner: [0.13, -0.13, 0.425],
+                        forehead:     [0.0,  0.22,  0.415]
+                    };
+                    const pos = moleCoords[cfg.molePos] || moleCoords.right_cheek;
+                    moleMesh.position.set(pos[0], pos[1], pos[2]);
+                    headGroup.add(moleMesh);
+                }
+
+                // 3D Hair Styles
+                const hairGroup = new THREE.Group();
+                const cap = new THREE.Mesh(new THREE.SphereGeometry(0.46, 14, 14, 0, Math.PI * 2, 0, Math.PI * 0.58), hairMat);
+                cap.position.y = 0.03;
+                hairGroup.add(cap);
+
+                if (cfg.hairStyle === 'spiky') {
+                    for (let i = 0; i < 6; i++) {
+                        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.36, 7), hairMat);
+                        spike.position.set(Math.sin(i) * 0.22, 0.48, Math.cos(i) * 0.18);
+                        spike.rotation.z = (i - 2.5) * 0.18;
+                        hairGroup.add(spike);
+                    }
+                } else if (cfg.hairStyle === 'long') {
+                    const backHair = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.95, 0.28), hairMat);
+                    backHair.position.set(0, -0.22, -0.28);
+                    hairGroup.add(backHair);
+                } else if (cfg.hairStyle === 'twintail') {
+                    const tailGeo = new THREE.ConeGeometry(0.18, 0.75, 8);
+                    const tL = new THREE.Mesh(tailGeo, hairMat);
+                    tL.position.set(-0.48, 0.05, -0.1);
+                    tL.rotation.z = 0.45;
+                    const tR = new THREE.Mesh(tailGeo, hairMat);
+                    tR.position.set(0.48, 0.05, -0.1);
+                    tR.rotation.z = -0.45;
+                    hairGroup.add(tL, tR);
+                } else if (cfg.hairStyle === 'bun') {
+                    const bun = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 12), hairMat);
+                    bun.position.set(0, 0.54, -0.1);
+                    hairGroup.add(bun);
+                } else if (cfg.hairStyle === 'afro') {
+                    const afro = new THREE.Mesh(new THREE.SphereGeometry(0.62, 14, 14), hairMat);
+                    afro.position.set(0, 0.18, -0.05);
+                    hairGroup.add(afro);
+                }
+                headGroup.add(hairGroup);
+
+                root.userData = { leftLeg, rightLeg, leftArm, rightArm, headGroup };
+                return root;
+            }
+
+            function buildWhiteHouseWorld() {
+                // Lobby Showcase Pedestal at (0, 0, 33)
+                lobbyPedestal = new THREE.Group();
+                const base = new THREE.Mesh(
+                    new THREE.CylinderGeometry(1.5, 1.75, 0.28, 32),
+                    new THREE.MeshPhongMaterial({ color: 0x1e293b, shininess: 80 })
+                );
+                base.position.y = 0.14;
+                const ring = new THREE.Mesh(
+                    new THREE.TorusGeometry(1.58, 0.07, 12, 36),
+                    new THREE.MeshBasicMaterial({ color: 0xfacc15 })
+                );
+                ring.rotation.x = Math.PI / 2;
+                ring.position.y = 0.28;
+                lobbyPedestal.add(base, ring);
+                lobbyPedestal.position.set(0, 0, 33);
+                worldGroup.add(lobbyPedestal);
+
+                // Clouds
+                const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+                for (let c = 0; c < 12; c++) {
+                    const cg = new THREE.Group();
+                    const p1 = new THREE.Mesh(new THREE.SphereGeometry(2.5, 8, 8), cloudMat);
+                    const p2 = new THREE.Mesh(new THREE.SphereGeometry(1.8, 8, 8), cloudMat);
+                    p2.position.set(2.0, -0.3, 0.3);
+                    cg.add(p1, p2);
+                    cg.position.set((Math.random() - 0.5) * 100, 22 + Math.random() * 8, (Math.random() - 0.5) * 80);
+                    worldGroup.add(cg);
+                }
+
+                // Green Lawn & Red Carpet Road leading into White House
+                const lawn = new THREE.Mesh(
+                    new THREE.PlaneGeometry(180, 180),
+                    new THREE.MeshPhongMaterial({ color: 0x22c55e, shininess: 10 })
+                );
+                lawn.rotation.x = -Math.PI / 2;
+                worldGroup.add(lawn);
+
+                const road = new THREE.Mesh(
+                    new THREE.PlaneGeometry(10, 96),
+                    new THREE.MeshPhongMaterial({ color: 0xe2e8f0 })
+                );
+                road.rotation.x = -Math.PI / 2;
+                road.position.set(0, 0.02, 4);
+                worldGroup.add(road);
+
+                // Outer Iron Fence & Gate (Z = 24)
+                const fenceMat = new THREE.MeshPhongMaterial({ color: 0x1e293b });
+                const leftFence = new THREE.Mesh(new THREE.BoxGeometry(34, 3.6, 0.5), fenceMat);
+                leftFence.position.set(-21, 1.8, 24);
+                const rightFence = new THREE.Mesh(new THREE.BoxGeometry(34, 3.6, 0.5), fenceMat);
+                rightFence.position.set(21, 1.8, 24);
+                worldGroup.add(leftFence, rightFence);
+
+                gateGroup = new THREE.Group();
+                const gateBars = new THREE.Mesh(
+                    new THREE.BoxGeometry(8, 3.5, 0.4),
+                    new THREE.MeshPhongMaterial({ color: 0xd97706 })
+                );
+                gateBars.position.y = 1.75;
+                gateGroup.add(gateBars);
+                gateGroup.position.set(0, 0, 24);
+                worldGroup.add(gateGroup);
+
+                // Courtyard Fountain (Z = 10)
+                const fountain = new THREE.Mesh(
+                    new THREE.CylinderGeometry(4.2, 4.6, 0.9, 24),
+                    new THREE.MeshPhongMaterial({ color: 0xf1f5f9 })
+                );
+                fountain.position.set(0, 0.45, 10);
+                const water = new THREE.Mesh(
+                    new THREE.CylinderGeometry(3.8, 3.8, 0.7, 24),
+                    new THREE.MeshPhongMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.8 })
+                );
+                water.position.set(0, 0.55, 10);
+                worldGroup.add(fountain, water);
+
+                // THE WHITE HOUSE BUILDING (Z = -4 to -44)
+                const whMat = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 30 });
+                const leftWall = new THREE.Mesh(new THREE.BoxGeometry(19, 11, 1.2), whMat);
+                leftWall.position.set(-13.5, 5.5, -4);
+                const rightWall = new THREE.Mesh(new THREE.BoxGeometry(19, 11, 1.2), whMat);
+                rightWall.position.set(13.5, 5.5, -4);
+                const backWall = new THREE.Mesh(new THREE.BoxGeometry(46, 11, 1.2), whMat);
+                backWall.position.set(0, 5.5, -44);
+                const sideWallL = new THREE.Mesh(new THREE.BoxGeometry(1.2, 11, 40), whMat);
+                sideWallL.position.set(-23, 5.5, -24);
+                const sideWallR = new THREE.Mesh(new THREE.BoxGeometry(1.2, 11, 40), whMat);
+                sideWallR.position.set(23, 5.5, -24);
+                worldGroup.add(leftWall, rightWall, backWall, sideWallL, sideWallR);
+
+                // White House Iconic Columns & Pediment Roof
+                for (let x = -12; x <= 12; x += 4.8) {
+                    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 11, 16), whMat);
+                    col.position.set(x, 5.5, -1.5);
+                    worldGroup.add(col);
+                }
+                const roof = new THREE.Mesh(new THREE.ConeGeometry(14, 4.5, 4), whMat);
+                roof.rotation.y = Math.PI / 4;
+                roof.position.set(0, 13.2, -3);
+                worldGroup.add(roof);
+
+                // White House Interior Carpet Floor
+                const interiorFloor = new THREE.Mesh(
+                    new THREE.PlaneGeometry(45, 40),
+                    new THREE.MeshPhongMaterial({ color: 0x991b1b })
+                );
+                interiorFloor.rotation.x = -Math.PI / 2;
+                interiorFloor.position.set(0, 0.03, -24);
+                worldGroup.add(interiorFloor);
+
+                // Front Door (Z = -4)
+                frontDoorGroup = new THREE.Group();
+                const doorMesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(8, 7.5, 0.6),
+                    new THREE.MeshPhongMaterial({ color: 0x78350f })
+                );
+                doorMesh.position.y = 3.75;
+                frontDoorGroup.add(doorMesh);
+                frontDoorGroup.position.set(0, 0, -4);
+                worldGroup.add(frontDoorGroup);
+
+                // Prince Kien & Princess Mai Nam Sach inside Royal Laser Cage (Z = -38)
+                kienNpc = buildCharacterMesh({
+                    gender: 'male', hairStyle: 'spiky', hairColor: '#111827',
+                    faceStyle: 'heroic', skinColor: '#fde68a', outfitColor: '#2563eb', molePos: 'right_cheek', moleSize: 2.2
+                });
+                kienNpc.position.set(-1.6, 0, -38);
+                worldGroup.add(kienNpc);
+
+                maiNpc = buildCharacterMesh({
+                    gender: 'female', hairStyle: 'long', hairColor: '#111827',
+                    faceStyle: 'cute', skinColor: '#fde68a', outfitColor: '#ec4899', molePos: 'left_cheek', moleSize: 2.2
+                });
+                maiNpc.position.set(1.6, 0, -38);
+                worldGroup.add(maiNpc);
+
+                cageLaserMesh = new THREE.Mesh(
+                    new THREE.CylinderGeometry(3.3, 3.3, 4.5, 20, 1, true),
+                    new THREE.MeshBasicMaterial({ color: 0xf43f5e, wireframe: true, transparent: true, opacity: 0.75 })
+                );
+                cageLaserMesh.position.set(0, 2.25, -38);
+                worldGroup.add(cageLaserMesh);
+            }
+
+            buildWhiteHouseWorld();
+            let myMesh = buildCharacterMesh(state.myConfig);
+            myMesh.position.set(0, 0.28, 33);
+            scene.add(myMesh);
+
+            // =========================================================
+            // 4. KHẾ VÀNG & CANH CÁ RÔ POWER-UPS ON THE ROAD
+            // =========================================================
+            function buildKheMesh() {
+                const g = new THREE.Group();
+                const mat = new THREE.MeshPhongMaterial({ color: 0xfacc15, emissive: 0xca8a04, shininess: 90 });
+                for (let i = 0; i < 5; i++) {
+                    const wing = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.65, 0.34), mat);
+                    wing.rotation.y = (i / 5) * Math.PI * 2;
+                    g.add(wing);
+                }
+                return g;
+            }
+
+            function buildCanhCaRoMesh() {
+                const g = new THREE.Group();
+                const bowl = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.45, 0.28, 0.36, 16),
+                    new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0x0284c7, emissiveIntensity: 0.25 })
+                );
+                bowl.position.y = 0.18;
+                const soup = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.41, 0.41, 0.06, 16),
+                    new THREE.MeshBasicMaterial({ color: 0xa3e635 })
+                );
+                soup.position.y = 0.34;
+                const fish = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.16, 10, 8),
+                    new THREE.MeshLambertMaterial({ color: 0xd97706 })
+                );
+                fish.scale.set(1.6, 0.6, 0.8);
+                fish.position.set(0, 0.39, 0);
+                g.add(bowl, soup, fish);
+                return g;
+            }
+
+            function spawnRoadFoodPowerups(chapNum) {
+                const zCenter = chapNum === 1 ? 31 : (chapNum === 2 ? 12 : (chapNum === 3 ? -15 : (chapNum === 4 ? -27 : -34)));
+                const spots = [
+                    { type: 'khe',  x: -3.2, z: zCenter + 2.2 },
+                    { type: 'canh', x:  3.2, z: zCenter + 2.2 },
+                    { type: 'khe',  x: -5.0, z: zCenter - 2.0 },
+                    { type: 'canh', x:  5.0, z: zCenter - 2.0 }
+                ];
+                spots.forEach((sp, idx) => {
+                    const mesh = sp.type === 'khe' ? buildKheMesh() : buildCanhCaRoMesh();
+                    mesh.position.set(sp.x, 0.75, sp.z);
+                    dynamicGroup.add(mesh);
+                    state.foodSpawns.push({
+                        id: `fd_${chapNum}_${idx}`,
+                        type: sp.type,
+                        mesh,
+                        collected: false,
+                        respawnTimer: 0
+                    });
+                });
+            }
+
+            function updateFoodHud() {
+                const kCount = document.getElementById('hud-khe-count');
+                const cCount = document.getElementById('hud-canh-count');
+                const kTimer = document.getElementById('hud-khe-timer');
+                const cTimer = document.getElementById('hud-canh-timer');
+                if (kCount) kCount.textContent = state.kheInventory;
+                if (cCount) cCount.textContent = state.canhInventory;
+                if (kTimer) kTimer.textContent = state.kheBuffTimer > 0 ? `${Math.ceil(state.kheBuffTimer)}s` : 'Ăn';
+                if (cTimer) cTimer.textContent = state.canhBuffTimer > 0 ? `${Math.ceil(state.canhBuffTimer)}s` : 'Húp';
+            }
+
+            function activateKheBuff(fromGround) {
+                if (!fromGround) {
+                    if (state.kheInventory <= 0) {
+                        showToast('Hết Khế dự trữ! Hãy chạy lại ăn ⭐ Quả Khế Vàng trên đường nhé!');
+                        return;
+                    }
+                    state.kheInventory--;
+                }
+                state.kheBuffTimer = 15.0;
+                state.myConfig.hp = Math.min(state.myConfig.maxHp, state.myConfig.hp + 35);
+                sfx.playSuccess();
+                spawnDamagePopup(myMesh.position, '⭐ ĂN KHẾ VÀNG: +50% SỨC MẠNH & +35 HP!', 'text-amber-300 text-sm');
+                showToast('⭐ Đã ăn Khế Vàng: Tăng 50% Sát thương, tăng tầm đánh & hồi 35 HP!');
+                updateFoodHud();
+            }
+
+            function activateCanhCaRoBuff(fromGround) {
+                if (!fromGround) {
+                    if (state.canhInventory <= 0) {
+                        showToast('Hết Canh Cá Rô! Hãy nhặt 🍲 Bát Canh Cá Rô trên đường nhé!');
+                        return;
+                    }
+                    state.canhInventory--;
+                }
+                state.canhBuffTimer = 15.0;
+                state.shieldActiveTimer = Math.max(state.shieldActiveTimer, 10.0);
+                state.myConfig.hp = Math.min(state.myConfig.maxHp, state.myConfig.hp + 50);
+                state.cooldowns.skill1 = 0;
+                state.cooldowns.skill2 = 0;
+                sfx.playSuccess();
+                spawnDamagePopup(myMesh.position, '🍲 CANH CÁ RÔ: TĂNG TỐC & GIÁP +50 HP!', 'text-cyan-300 text-sm');
+                showToast('🍲 Đã húp Canh Cá Rô: Tăng 45% Tốc chạy, bật Giáp bảo vệ & hồi 50 HP!');
+                updateFoodHud();
+            }
+
+            // =========================================================
+            // 5. 5 CHAPTERS x 3 STAGES STORY ENGINE AT THE WHITE HOUSE
+            // =========================================================
+            function clearDynamicObjects() {
+                while (dynamicGroup.children.length > 0) {
+                    dynamicGroup.remove(dynamicGroup.children[0]);
+                }
+                state.enemies = [];
+                state.collectibles = [];
+                state.puzzleTerminals = [];
+                state.foodSpawns = [];
+                const pm = document.getElementById('puzzle-modal');
+                if (pm) pm.classList.add('hidden');
+                const wb = document.getElementById('wedding-banner');
+                if (wb) {
+                    wb.classList.add('hidden');
+                    wb.classList.remove('flex');
+                }
+            }
+
+            function spawnEnemy(type, name, x, z, baseHp, baseDmg, scale = 1.0) {
+                const diff = DIFFICULTY_SETTINGS[state.difficulty] || DIFFICULTY_SETTINGS.easy;
+                const maxHp = Math.round(baseHp * diff.enemyHpMult);
+                const dmg = Math.round(baseDmg * diff.enemyDmgMult);
+
+                let mesh;
+                if (type === 'dog') {
+                    mesh = new THREE.Group();
+                    const body = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.65, 0.5, 1.15),
+                        new THREE.MeshPhongMaterial({ color: 0x78350f })
+                    );
+                    body.position.y = 0.45;
+                    const head = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.48, 0.45, 0.5),
+                        new THREE.MeshPhongMaterial({ color: 0x451a03 })
+                    );
+                    head.position.set(0, 0.72, 0.52);
+                    mesh.add(body, head);
+                } else {
+                    mesh = buildCharacterMesh({
+                        gender: 'male',
+                        hairStyle: type === 'boss' ? 'afro' : 'sidepart',
+                        hairColor: type === 'boss' ? '#ef4444' : '#111827',
+                        faceStyle: 'cool',
+                        skinColor: '#fcd34d',
+                        outfitColor: type === 'boss' ? '#7f1d1d' : '#1e293b',
+                        molePos: 'none'
+                    });
+                }
+                mesh.scale.setScalar(scale);
+                mesh.position.set(x, 0, z);
+                dynamicGroup.add(mesh);
+
+                state.enemies.push({
+                    type, name, mesh, hp: maxHp, maxHp, dmg,
+                    speed: (type === 'dog' ? 5.6 : 4.1) * diff.speedMult,
+                    attackCd: 0
+                });
+            }
+
+            function setupChapter(chapNum, stageNum = 1) {
+                state.chapter = chapNum;
+                state.stage = stageNum;
+                clearDynamicObjects();
+                spawnRoadFoodPowerups(chapNum);
+                updateFoodHud();
+
+                if (gateGroup) gateGroup.position.x = chapNum >= 2 ? -9.5 : 0;
+                if (frontDoorGroup) frontDoorGroup.position.x = chapNum >= 3 ? -9.5 : 0;
+                if (cageLaserMesh) cageLaserMesh.visible = !(chapNum >= 5 || (state.rescuedKien && state.rescuedMai));
+
+                const titleEl = document.getElementById('hud-chapter-title');
+                const badgeEl = document.getElementById('hud-stage-badge');
+                const objEl = document.getElementById('hud-objective-text');
+                const progEl = document.getElementById('hud-chapter-progress');
+
+                const globalStage = (chapNum - 1) * 3 + stageNum;
+                if (badgeEl) badgeEl.textContent = `Màn ${globalStage}/15`;
+                if (progEl) progEl.style.width = `${Math.min(100, Math.round((globalStage / 15) * 100))}%`;
+
+                if (chapNum === 1) {
+                    if (stageNum === 1) { state.myConfig.x = 0; state.myConfig.z = 36; }
+                    if (titleEl) titleEl.textContent = 'CHƯƠNG 1: NGOÀI CỔNG NHÀ TRẮNG';
+                    if (objEl) objEl.textContent = `Màn 1.${stageNum}: Đánh bại Đội Bảo Vệ Cổng Nhà Trắng (Đợt ${stageNum}/3)!`;
+                    const count = 3 + stageNum;
+                    for (let i = 0; i < count; i++) {
+                        spawnEnemy('guard', `Đặc Vụ Cổng #${i + 1}`, (i - (count - 1) / 2) * 3.2, 27 + (i % 2) * 2, 75 + stageNum * 15, 9);
+                    }
+                } else if (chapNum === 2) {
+                    if (stageNum === 1) { state.myConfig.x = 0; state.myConfig.z = 21; }
+                    if (titleEl) titleEl.textContent = 'CHƯƠNG 2: SÂN CỎ & ĐÀI PHUN NƯỚC';
+                    if (objEl) objEl.textContent = `Màn 2.${stageNum}: Hạ đàn Chó Săn hung dữ trước sân Nhà Trắng (Đợt ${stageNum}/3)!`;
+                    const count = 4 + stageNum;
+                    for (let i = 0; i < count; i++) {
+                        const ang = (i / count) * Math.PI * 2;
+                        spawnEnemy('dog', `Chó Săn #${i + 1}`, Math.cos(ang) * 7, 10 + Math.sin(ang) * 5, 65 + stageNum * 15, 10);
+                    }
+                } else if (chapNum === 3) {
+                    if (stageNum === 1) {
+                        state.myConfig.x = 0; state.myConfig.z = -7;
+                        state.solvedPuzzles = 0;
+                    }
+                    if (titleEl) titleEl.textContent = 'CHƯƠNG 3: GIẢI CÂU ĐỐ TRONG NHÀ TRẮNG';
+                    if (stageNum <= 2) {
+                        if (objEl) objEl.textContent = `Màn 3.${stageNum}: Hạ Lính Gác Sảnh và lại gần Trụ Ánh Sáng bấm [Mở/Cứu] giải đố!`;
+                        spawnEnemy('guard', 'Vệ Binh Sảnh', -4, -16, 95, 11);
+                        spawnEnemy('guard', 'Kỹ Sư An Ninh', 4, -16, 95, 11);
+                        const term = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.65, 0.85, 2.2, 16),
+                            new THREE.MeshPhongMaterial({ color: 0x06b6d4, emissive: 0x0891b2, emissiveIntensity: 0.5 })
+                        );
+                        term.position.set(stageNum === 1 ? -6 : 6, 1.1, -18);
+                        dynamicGroup.add(term);
+                        state.puzzleTerminals.push({ mesh: term, solved: false, stageNum });
+                    } else {
+                        if (objEl) objEl.textContent = 'Màn 3.3: Đánh bại Đội Trưởng Mật Mã để mở hầm giam Kiên & Mai!';
+                        spawnEnemy('boss', 'Đội Trưởng Mật Mã', 0, -21, 210, 14, 1.22);
+                    }
+                } else if (chapNum === 4) {
+                    if (stageNum === 1) {
+                        state.myConfig.x = 0; state.myConfig.z = -23;
+                        state.collectedCount = 0;
+                        state.rescuedKien = false;
+                        state.rescuedMai = false;
+                    }
+                    if (titleEl) titleEl.textContent = 'CHƯƠNG 4: TÌM BÁU VẬT & CỨU KIÊN - MAI';
+                    if (stageNum === 1) {
+                        if (objEl) objEl.textContent = 'Màn 4.1: Chạm vào 3 Báu Vật Hoàng Gia (Nhẫn, Chìa Khóa, Vương Miện) để thu thập!';
+                        const items = [
+                            { name: 'Nhẫn Cưới Kim Cương', x: -8, z: -28, color: 0x38bdf8 },
+                            { name: 'Chìa Khóa Vàng Nam Sách', x: 8, z: -28, color: 0xfacc15 },
+                            { name: 'Vương Miện Hoa Hồng', x: 0, z: -32, color: 0xf43f5e }
+                        ];
+                        items.forEach(it => {
+                            const m = new THREE.Mesh(
+                                new THREE.OctahedronGeometry(0.65, 0),
+                                new THREE.MeshPhongMaterial({ color: it.color, emissive: it.color, emissiveIntensity: 0.4 })
+                            );
+                            m.position.set(it.x, 1.2, it.z);
+                            dynamicGroup.add(m);
+                            state.collectibles.push({ name: it.name, mesh: m, collected: false });
+                        });
+                        spawnEnemy('guard', 'Cai Ngục Báu Vật', 0, -29, 110, 12);
+                    } else if (stageNum === 2) {
+                        if (objEl) objEl.textContent = 'Màn 4.2: Hạ Cai Ngục Tối Cao đang canh giữ lồng giam Kiên & Mai!';
+                        spawnEnemy('boss', 'Cai Ngục Tối Cao', 0, -33, 240, 15, 1.25);
+                    } else {
+                        if (objEl) objEl.textContent = 'Màn 4.3: Chạy đến lồng giam cuối phòng bấm [Mở/Cứu] giải cứu Hoàng Tử Kiên & Công Chúa Mai!';
+                    }
+                } else if (chapNum === 5) {
+                    if (stageNum === 1) { state.myConfig.x = 0; state.myConfig.z = -31; }
+                    if (titleEl) titleEl.textContent = 'CHƯƠNG 5: HỒI KẾT & ĐÁM CƯỚI THẾ KỶ';
+                    if (stageNum === 1) {
+                        if (objEl) objEl.textContent = 'Màn 5.1: Đánh bại Đội Cận Vệ Thép trước lễ đường!';
+                        for (let i = -1; i <= 1; i++) {
+                            spawnEnemy('guard', `Cận Vệ Thép #${i + 2}`, i * 4, -27, 130, 13);
+                        }
+                    } else if (stageNum === 2) {
+                        if (objEl) objEl.textContent = 'Màn 5.2: Hạ gục TRÙM CUỐI - Tư Lệnh Đặc Vụ Nhà Trắng để bảo vệ đám cưới!';
+                        spawnEnemy('boss', 'TƯ LỆNH TỐI CAO', 0, -26, 360, 18, 1.45);
+                    } else {
+                        if (objEl) objEl.textContent = '🎉 HOÀN THÀNH: Hoàng Tử Kiên & Công Chúa Mai Nam Sách chính thức cưới nhau!';
+                        const wb = document.getElementById('wedding-banner');
+                        if (wb) {
+                            wb.classList.remove('hidden');
+                            wb.classList.add('flex');
+                        }
+                        sfx.playSuccess();
+                        spawnWeddingFireworks();
+                    }
+                }
+            }
+
+            window.jumpToChapter = function (c) {
+                setupChapter(c, 1);
+                showToast(`Đã chuyển đến Chương ${c}!`);
+            };
+
+            function advanceStageOrChapter() {
+                sfx.playSuccess();
+                if (state.stage < 3) {
+                    setupChapter(state.chapter, state.stage + 1);
+                    showToast(`🎉 Qua màn! Bước sang Chương ${state.chapter} - Màn ${state.stage}/3!`);
+                } else if (state.chapter < 5) {
+                    setupChapter(state.chapter + 1, 1);
+                    showToast(`🏆 Xuất sắc! Đã mở khóa CHƯƠNG ${state.chapter}!`);
+                }
+            }
+
+            function spawnWeddingFireworks() {
+                for (let i = 0; i < 18; i++) {
+                    const p = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.22, 8, 8),
+                        new THREE.MeshBasicMaterial({ color: [0xfacc15, 0xf43f5e, 0x38bdf8, 0x4ade80][i % 4] })
+                    );
+                    p.position.set((Math.random() - 0.5) * 14, 3 + Math.random() * 6, -34 + (Math.random() - 0.5) * 8);
+                    dynamicGroup.add(p);
+                }
+            }
+
+            // =========================================================
+            // 6. AI COMPANIONS (FILL UP TO 6 PLAYERS IN ROOM)
+            // =========================================================
+            function spawnAiSquad() {
+                state.aiBots.forEach(b => scene.remove(b.mesh));
+                state.aiBots = [];
+                if (!state.fillWithBots) return;
+
+                const botProfiles = [
+                    { name: 'Hiệp Sĩ Hải Dương', gender: 'male', hairStyle: 'spiky', outfitColor: '#16a34a' },
+                    { name: 'Nữ Hiệp Nam Sách', gender: 'female', hairStyle: 'twintail', outfitColor: '#db2777' },
+                    { name: 'Cung Thủ Chí Linh', gender: 'male', hairStyle: 'sidepart', outfitColor: '#9333ea' },
+                    { name: 'Pháp Sư Kinh Môn', gender: 'female', hairStyle: 'bun', outfitColor: '#eab308' },
+                    { name: 'Vệ Quân Bạch Đằng', gender: 'male', hairStyle: 'afro', outfitColor: '#e11d48' }
+                ];
+
+                botProfiles.forEach((bp, idx) => {
+                    const mesh = buildCharacterMesh({
+                        ...bp, hairColor: '#111827', faceStyle: 'heroic', skinColor: '#fde68a', molePos: 'right_cheek', moleSize: 2
+                    });
+                    mesh.position.set((idx - 2) * 2.2, 0, state.myConfig.z + 2);
+                    scene.add(mesh);
+                    state.aiBots.push({ name: bp.name, mesh, atkCd: 0, offsetAngle: (idx / 5) * Math.PI * 2 });
+                });
+            }
+
+            // =========================================================
+            // 7. COMBAT, SKILLS & INTERACTION
+            // =========================================================
+            function spawnDamagePopup(worldPos, text, colorClass = 'text-amber-300 text-sm') {
+                const container = document.getElementById('world-labels');
+                if (!container) return;
+                const v = worldPos.clone();
+                v.y += 2.3;
+                v.project(camera);
+                if (v.z > 1) return;
+                const x = (v.x * 0.5 + 0.5) * window.innerWidth;
+                const y = (-(v.y * 0.5) + 0.5) * window.innerHeight;
+                const el = document.createElement('div');
+                el.className = `dmg-popup ${colorClass}`;
+                el.style.left = `${x}px`;
+                el.style.top = `${y}px`;
+                el.textContent = text;
+                container.appendChild(el);
+                setTimeout(() => el.remove(), 1050);
+            }
+
+            function performAttack(skillType = 'normal') {
+                if (!state.inGame) return;
+
+                const kheDmgMult = state.kheBuffTimer > 0 ? 1.5 : 1.0;
+                const kheRangeMult = state.kheBuffTimer > 0 ? 1.35 : 1.0;
+
+                let range = 4.0 * kheRangeMult;
+                let dmg = Math.round(30 * kheDmgMult);
+
+                if (skillType === 'skill1') {
+                    if (state.cooldowns.skill1 > 0) return;
+                    state.cooldowns.skill1 = 3.5;
+                    range = 5.8 * kheRangeMult;
+                    dmg = Math.round(52 * kheDmgMult);
+                    sfx.playSkill();
+                } else if (skillType === 'skill2') {
+                    if (state.cooldowns.skill2 > 0) return;
+                    state.cooldowns.skill2 = 6.5;
+                    state.shieldActiveTimer = 4.5;
+                    range = 5.0 * kheRangeMult;
+                    dmg = Math.round(40 * kheDmgMult);
+                    sfx.playSkill();
+                    showToast('🛡️ Bật Khiên Hoàng Gia: Giảm 60% sát thương!');
+                } else if (skillType === 'ulti') {
+                    if (state.cooldowns.ulti > 0) return;
+                    state.cooldowns.ulti = 9.0;
+                    range = 8.2 * kheRangeMult;
+                    dmg = Math.round(95 * kheDmgMult);
+                    sfx.playSkill();
+                    showToast('🐉 Tuyệt Kỹ Bão Kiếm Nam Sách!');
+                } else {
+                    sfx.playAttack();
+                }
+
+                // Arm swing visual
+                if (myMesh.userData && myMesh.userData.rightArm) {
+                    myMesh.userData.rightArm.rotation.x = -1.35;
+                    setTimeout(() => {
+                        if (myMesh.userData && myMesh.userData.rightArm) myMesh.userData.rightArm.rotation.x = 0;
+                    }, 160);
+                }
+
+                for (let i = state.enemies.length - 1; i >= 0; i--) {
+                    const en = state.enemies[i];
+                    const d = Math.hypot(en.mesh.position.x - state.myConfig.x, en.mesh.position.z - state.myConfig.z);
+                    if (d <= range) {
+                        en.hp -= dmg;
+                        spawnDamagePopup(en.mesh.position, `-${dmg}`, skillType === 'normal' ? 'text-amber-300 text-sm' : 'text-rose-400 text-base');
+                        if (en.hp <= 0) {
+                            dynamicGroup.remove(en.mesh);
+                            state.enemies.splice(i, 1);
+                        }
+                    }
+                }
+
+                checkStageCompletion();
+            }
+
+            function checkStageCompletion() {
+                if (state.enemies.length === 0) {
+                    if (state.chapter === 1 || state.chapter === 2) {
+                        advanceStageOrChapter();
+                    } else if (state.chapter === 3 && state.stage === 3) {
+                        advanceStageOrChapter();
+                    } else if (state.chapter === 4 && state.stage === 2) {
+                        advanceStageOrChapter();
+                    } else if (state.chapter === 5 && (state.stage === 1 || state.stage === 2)) {
+                        advanceStageOrChapter();
+                    }
+                }
+            }
+
+            function openSecurityPuzzleModal(terminal) {
+                const modal = document.getElementById('puzzle-modal');
+                const qEl = document.getElementById('puzzle-question');
+                const optEl = document.getElementById('puzzle-options');
+                if (!modal || !qEl || !optEl) return;
+
+                const questions = [
+                    {
+                        q: 'Mật mã mở cửa Nhà Trắng cứu Hoàng Tử Kiên & Công Chúa Mai quê ở đâu?',
+                        opts: ['A. Nam Sách - Hải Dương', 'B. New York', 'C. Paris'],
+                        ans: 0
+                    },
+                    {
+                        q: 'Món ăn đặc sản nào trên đường giúp búp tốc chạy và giáp siêu cấp?',
+                        opts: ['A. Hamburger', 'B. Khế Vàng & Canh Cá Rô', 'C. Pizza'],
+                        ans: 1
+                    }
+                ];
+                const pick = questions[(state.stage - 1) % questions.length];
+                qEl.textContent = pick.q;
+                optEl.innerHTML = '';
+                pick.opts.forEach((txt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'btn-game w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 font-bold text-xs text-left';
+                    btn.textContent = txt;
+                    btn.onclick = () => {
+                        if (idx === pick.ans) {
+                            terminal.solved = true;
+                            modal.classList.add('hidden');
+                            advanceStageOrChapter();
+                        } else {
+                            showToast('Sai mật mã rồi! Hãy chọn đáp án đúng nhé!');
+                        }
+                    };
+                    optEl.appendChild(btn);
+                });
+                modal.classList.remove('hidden');
+            }
+
+            function performInteract() {
+                if (!state.inGame) return;
+
+                // Chapter 3 puzzle terminals
+                for (const t of state.puzzleTerminals) {
+                    if (!t.solved) {
+                        const d = Math.hypot(t.mesh.position.x - state.myConfig.x, t.mesh.position.z - state.myConfig.z);
+                        if (d < 4.5) {
+                            openSecurityPuzzleModal(t);
+                            return;
+                        }
+                    }
+                }
+
+                // Chapter 4 Stage 3: Rescue Kien & Mai from laser cage
+                if (state.chapter === 4 && state.stage === 3) {
+                    const dCage = Math.hypot(state.myConfig.x - 0, state.myConfig.z - (-38));
+                    if (dCage < 6.5) {
+                        state.rescuedKien = true;
+                        state.rescuedMai = true;
+                        if (cageLaserMesh) cageLaserMesh.visible = false;
+                        showToast('💖 Đã phá lồng laser giải cứu Hoàng Tử Kiên & Công Chúa Mai Nam Sách!');
+                        advanceStageOrChapter();
+                        return;
+                    }
+                }
+
+                showToast('Hãy lại gần Trụ Giải Mã hoặc Lồng Giam Kiên & Mai để tương tác!');
+            }
+
+            // =========================================================
+            // 8. ENTER GAME FUNCTION (GUARANTEED TO WORK IMMEDIATELY)
+            // =========================================================
+            function startGameNow() {
+                try {
+                    const nameInput = document.getElementById('input-player-name');
+                    const roomInput = document.getElementById('input-room-code');
+                    if (nameInput && nameInput.value.trim()) state.myConfig.name = nameInput.value.trim();
+                    if (roomInput && roomInput.value.trim()) state.roomCode = roomInput.value.trim().toUpperCase();
+
+                    state.inGame = true;
+                    if (lobbyPedestal) lobbyPedestal.visible = false;
+
+                    // Hide Lobby Menu, Show In-Game HUD
+                    const menuOverlay = document.getElementById('menu-overlay');
+                    const hudOverlay = document.getElementById('hud-overlay');
+                    if (menuOverlay) menuOverlay.classList.add('hidden');
+                    if (hudOverlay) {
+                        hudOverlay.classList.remove('hidden');
+                        if (state.cleanHud) hudOverlay.classList.add('clean-hud-active');
+                    }
+
+                    // Update HUD Badges
+                    const roomEl = document.getElementById('hud-room-code');
+                    const nameEl = document.getElementById('hud-my-name');
+                    const diffEl = document.getElementById('hud-diff-badge');
+                    if (roomEl) roomEl.textContent = state.roomCode;
+                    if (nameEl) nameEl.textContent = state.myConfig.name;
+                    if (diffEl) diffEl.textContent = (DIFFICULTY_SETTINGS[state.difficulty] || DIFFICULTY_SETTINGS.easy).label;
+
+                    rebuildMyCharacterPreview();
+                    setupChapter(1, 1);
+                    spawnAiSquad();
+                    sfx.playSuccess();
+                    showToast('🎮 Đã vào Nhà Trắng! Nhặt ⭐ Khế Vàng & 🍲 Canh Cá Rô trên đường để búp sức mạnh nhé!');
+                } catch (err) {
+                    console.error('Start game error:', err);
+                }
+            }
+            window.startGameNow = startGameNow;
+
+            // =========================================================
+            // 9. UI BINDINGS (LOBBY ZOOM, CUSTOMIZER, MOBA BUTTONS)
+            // =========================================================
+            const moleDescriptions = {
+                none: 'Không có mụn cứt ruồi',
+                right_cheek: 'Má phải duyên dáng',
+                left_cheek: 'Má trái phú quý',
+                under_eye: 'Dưới mắt đào hoa',
+                mouth_corner: 'Khóe miệng duyên ăn nói',
+                forehead: 'Giữa trán đại cát'
+            };
+
+            function setLobbyZoom(dist, focusFace = null) {
+                state.lobbyZoomDist = Math.max(1.35, Math.min(5.5, dist));
+                const slider = document.getElementById('slider-lobby-zoom');
+                const label = document.getElementById('lobby-zoom-label');
+                if (slider) slider.value = state.lobbyZoomDist;
+                if (focusFace === true || state.lobbyZoomDist < 2.25) {
+                    state.lobbyTargetHeight = 2.2;
+                    if (label) label.textContent = 'Cận Cảnh Mặt';
+                } else {
+                    state.lobbyTargetHeight = 1.42;
+                    if (label) label.textContent = 'Toàn Thân';
+                }
+            }
+
+            function rebuildMyCharacterPreview() {
+                const pos = myMesh.position.clone();
+                const rot = myMesh.rotation.y;
+                scene.remove(myMesh);
+                myMesh = buildCharacterMesh(state.myConfig);
+                myMesh.position.copy(pos);
+                myMesh.rotation.y = rot;
+                scene.add(myMesh);
+            }
+
+            on('slider-lobby-zoom', 'input', (e) => setLobbyZoom(parseFloat(e.target.value)));
+            on('btn-lobby-zoom-in', 'click', () => setLobbyZoom(state.lobbyZoomDist - 0.55));
+            on('btn-lobby-zoom-out', 'click', () => setLobbyZoom(state.lobbyZoomDist + 0.55));
+            on('btn-lobby-rot-left', 'click', () => { state.lobbyManualYaw -= 0.45; });
+            on('btn-lobby-rot-right', 'click', () => { state.lobbyManualYaw += 0.45; });
+            on('btn-lobby-zoom-face', 'click', () => {
+                setLobbyZoom(1.5, true);
+                state.lobbyManualYaw = 0;
+            });
+            on('btn-lobby-zoom-body', 'click', () => setLobbyZoom(3.4, false));
+            on('btn-lobby-pose', 'click', () => {
+                state.lobbyPoseTimer = 1.6;
+                state.jumpVel = 6.8;
+                sfx.playSuccess();
+            });
+
+            // Gender buttons
+            on('gender-male', 'click', () => {
+                state.myConfig.gender = 'male';
+                rebuildMyCharacterPreview();
+                document.getElementById('gender-male').className = 'btn-game py-1.5 rounded-xl font-black border-2 border-blue-400 bg-blue-500/25 text-blue-200 flex items-center justify-center gap-1.5';
+                document.getElementById('gender-female').className = 'btn-game py-1.5 rounded-xl font-black border border-slate-700 bg-slate-800/70 text-slate-300 flex items-center justify-center gap-1.5';
+            });
+            on('gender-female', 'click', () => {
+                state.myConfig.gender = 'female';
+                rebuildMyCharacterPreview();
+                document.getElementById('gender-female').className = 'btn-game py-1.5 rounded-xl font-black border-2 border-pink-400 bg-pink-500/25 text-pink-200 flex items-center justify-center gap-1.5';
+                document.getElementById('gender-male').className = 'btn-game py-1.5 rounded-xl font-black border border-slate-700 bg-slate-800/70 text-slate-300 flex items-center justify-center gap-1.5';
+            });
+
+            on('select-hair-style', 'change', (e) => {
+                state.myConfig.hairStyle = e.target.value;
+                rebuildMyCharacterPreview();
+            });
+            on('select-face-style', 'change', (e) => {
+                state.myConfig.faceStyle = e.target.value;
+                setLobbyZoom(1.55, true);
+                state.lobbyManualYaw = 0;
+                rebuildMyCharacterPreview();
+            });
+
+            document.querySelectorAll('#hair-color-palette button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.myConfig.hairColor = btn.dataset.color;
+                    rebuildMyCharacterPreview();
+                });
+            });
+            document.querySelectorAll('#outfit-color-palette button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.myConfig.outfitColor = btn.dataset.outfit;
+                    rebuildMyCharacterPreview();
+                });
+            });
+
+            // Mole buttons
+            document.querySelectorAll('.mole-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.mole-btn').forEach(b => {
+                        b.className = 'mole-btn py-1 px-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300';
+                    });
+                    btn.className = 'mole-btn py-1 px-1.5 rounded-lg border-2 border-amber-400 bg-amber-500/20 text-amber-200';
+                    state.myConfig.molePos = btn.dataset.mole;
+                    const badge = document.getElementById('mole-badge');
+                    if (badge) badge.textContent = moleDescriptions[state.myConfig.molePos] || '';
+                    setLobbyZoom(1.48, true);
+                    state.lobbyManualYaw = 0;
+                    rebuildMyCharacterPreview();
+                });
+            });
+
+            on('slider-mole-size', 'input', (e) => {
+                state.myConfig.moleSize = parseFloat(e.target.value);
+                setLobbyZoom(1.48, true);
+                state.lobbyManualYaw = 0;
+                rebuildMyCharacterPreview();
+            });
+
+            on('btn-random-char', 'click', () => {
+                const hairs = ['spiky', 'sidepart', 'long', 'twintail', 'bun', 'afro'];
+                const colors = ['#111827', '#78350f', '#facc15', '#ef4444', '#ec4899', '#38bdf8'];
+                const outfits = ['#2563eb', '#db2777', '#16a34a', '#eab308', '#9333ea', '#e11d48'];
+                const moles = ['right_cheek', 'left_cheek', 'under_eye', 'mouth_corner', 'forehead'];
+                state.myConfig.gender = Math.random() > 0.5 ? 'male' : 'female';
+                state.myConfig.hairStyle = hairs[Math.floor(Math.random() * hairs.length)];
+                state.myConfig.hairColor = colors[Math.floor(Math.random() * colors.length)];
+                state.myConfig.outfitColor = outfits[Math.floor(Math.random() * outfits.length)];
+                state.myConfig.molePos = moles[Math.floor(Math.random() * moles.length)];
+                rebuildMyCharacterPreview();
+                sfx.playTone(600, 'sine', 0.1);
+            });
+
+            // Difficulty buttons
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.diff-btn').forEach(b => {
+                        b.className = 'diff-btn btn-game rounded-xl p-1.5 border border-slate-700 bg-slate-800/70 text-left';
+                    });
+                    btn.className = 'diff-btn btn-game rounded-xl p-1.5 border-2 border-amber-400 bg-amber-500/20 text-left';
+                    state.difficulty = btn.dataset.diff;
+                });
+            });
+
+            // Room Host vs Join Tabs
+            on('tab-host-room', 'click', () => {
+                document.getElementById('panel-host-settings').classList.remove('hidden');
+                document.getElementById('panel-join-list').classList.add('hidden');
+                document.getElementById('tab-host-room').className = 'px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 font-black';
+                document.getElementById('tab-join-room').className = 'px-2.5 py-1 rounded-lg text-slate-300 hover:text-white';
+            });
+            on('tab-join-room', 'click', () => {
+                document.getElementById('panel-host-settings').classList.add('hidden');
+                document.getElementById('panel-join-list').classList.remove('hidden');
+                document.getElementById('tab-join-room').className = 'px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 font-black';
+                document.getElementById('tab-host-room').className = 'px-2.5 py-1 rounded-lg text-slate-300 hover:text-white';
+                const list = document.getElementById('active-rooms-container');
+                if (list) {
+                    list.innerHTML = `
+                        <div class="flex items-center justify-between bg-slate-900 px-2.5 py-1.5 rounded-xl border border-slate-700 text-[11px]">
+                            <div><b class="text-amber-300">KIEN-MAI-VIP</b> <span class="text-slate-400">(5/6 người)</span></div>
+                            <button type="button" onclick="window.startGameNow()" class="bg-emerald-500 text-slate-950 font-black px-2 py-0.5 rounded-lg">Vào ngay</button>
+                        </div>
+                        <div class="flex items-center justify-between bg-slate-900 px-2.5 py-1.5 rounded-xl border border-slate-700 text-[11px]">
+                            <div><b class="text-cyan-300">NAM-SACH-01</b> <span class="text-slate-400">(4/6 người)</span></div>
+                            <button type="button" onclick="window.startGameNow()" class="bg-emerald-500 text-slate-950 font-black px-2 py-0.5 rounded-lg">Vào ngay</button>
+                        </div>
+                    `;
+                }
+            });
+
+            on('toggle-ai-bots', 'change', (e) => { state.fillWithBots = e.target.checked; });
+            on('btn-start-game', 'click', startGameNow);
+
+            // In-Game Clean HUD & Return to Lobby
+            on('btn-clean-hud', 'click', () => {
+                state.cleanHud = !state.cleanHud;
+                const hud = document.getElementById('hud-overlay');
+                const label = document.getElementById('clean-hud-label');
+                if (state.cleanHud) {
+                    hud.classList.add('clean-hud-active');
+                    if (label) label.textContent = 'Gọn Màn Hình';
+                    showToast('Đã ẩn các bảng phụ không cần thiết!');
+                } else {
+                    hud.classList.remove('clean-hud-active');
+                    if (label) label.textContent = 'Đầy Đủ HUD';
+                    showToast('Đã hiện Radar & bảng chuyển chương!');
+                }
+            });
+
+            on('btn-open-menu', 'click', () => {
+                state.inGame = false;
+                if (lobbyPedestal) lobbyPedestal.visible = true;
+                document.getElementById('hud-overlay').classList.add('hidden');
+                document.getElementById('menu-overlay').classList.remove('hidden');
+            });
+
+            // In-Game Camera Zoom
+            function setCameraZoom(d) {
+                state.camZoomDist = Math.max(4.0, Math.min(20.0, d));
+                const s = document.getElementById('slider-cam-zoom');
+                if (s) s.value = state.camZoomDist;
+            }
+            on('btn-zoom-in', 'click', () => setCameraZoom(state.camZoomDist - 1.8));
+            on('btn-zoom-out', 'click', () => setCameraZoom(state.camZoomDist + 1.8));
+            on('slider-cam-zoom', 'input', (e) => setCameraZoom(parseFloat(e.target.value)));
+            window.addEventListener('wheel', (e) => {
+                if (!state.inGame) {
+                    setLobbyZoom(state.lobbyZoomDist + (e.deltaY > 0 ? 0.35 : -0.35));
+                } else {
+                    setCameraZoom(state.camZoomDist + (e.deltaY > 0 ? 1.0 : -1.0));
+                }
+            }, { passive: true });
+
+            // Combat & Food Buttons
+            on('btn-attack', 'click', () => performAttack('normal'));
+            on('btn-skill-1', 'click', () => performAttack('skill1'));
+            on('btn-skill-2', 'click', () => performAttack('skill2'));
+            on('btn-skill', 'click', () => performAttack('ulti'));
+            on('btn-interact', 'click', () => performInteract());
+            on('btn-eat-khe', 'click', () => activateKheBuff(false));
+            on('btn-eat-canh', 'click', () => activateCanhCaRoBuff(false));
+
+            on('btn-jump', 'click', () => {
+                if (state.jumpY <= 0.05) {
+                    state.jumpVel = 7.5;
+                    sfx.playTone(440, 'sine', 0.1);
+                }
+            });
+
+            on('btn-flash', 'click', () => {
+                if (state.cooldowns.flash > 0) return;
+                state.cooldowns.flash = 8.0;
+                state.myConfig.x += Math.sin(state.myConfig.rotY) * 5.0;
+                state.myConfig.z += Math.cos(state.myConfig.rotY) * 5.0;
+                sfx.playSkill();
+                showToast('⚡ Tốc Biến!');
+            });
+
+            on('btn-heal', 'click', () => {
+                if (state.cooldowns.heal > 0) return;
+                state.cooldowns.heal = 10.0;
+                state.myConfig.hp = Math.min(state.myConfig.maxHp, state.myConfig.hp + 45);
+                sfx.playSuccess();
+                spawnDamagePopup(myMesh.position, '+45 HP', 'text-emerald-300 text-base');
+            });
+
+            on('btn-pt-emote', 'click', () => {
+                const emotes = ['💖 Thả tim Play Together!', '⭐ Ăn Khế Vàng khỏe quá!', '🍲 Canh Cá Rô Nam Sách tuyệt vời!', '👑 Quyết cứu Kiên & Mai!'];
+                state.mySpeechBubble = { text: emotes[Math.floor(Math.random() * emotes.length)], timer: 4.2 };
+                state.jumpVel = 6.5;
+                sfx.playSuccess();
+            });
+
+            // Host Approval Simulation
+            on('btn-sim-join-req', 'click', () => {
+                const box = document.getElementById('host-approval-box');
+                if (box) box.classList.remove('hidden');
+            });
+            on('btn-approve-join', 'click', () => {
+                document.getElementById('host-approval-box').classList.add('hidden');
+                showToast('✅ Chủ phòng đã duyệt thành viên mới vào phòng!');
+            });
+            on('btn-reject-join', 'click', () => {
+                document.getElementById('host-approval-box').classList.add('hidden');
+                showToast('Đã từ chối yêu cầu vào phòng.');
+            });
+
+            on('btn-close-puzzle', 'click', () => document.getElementById('puzzle-modal').classList.add('hidden'));
+            on('btn-fireworks-more', 'click', () => {
+                spawnWeddingFireworks();
+                sfx.playSuccess();
+            });
+
+            // Chat & Voice Mic
+            on('btn-toggle-chat', 'click', () => {
+                document.getElementById('chat-drawer').classList.toggle('hidden');
+            });
+
+            function sendChatMessage(text) {
+                if (!text) return;
+                state.mySpeechBubble = { text, timer: 4.5 };
+                const box = document.getElementById('chat-messages');
+                if (box) {
+                    const div = document.createElement('div');
+                    div.innerHTML = `<b class="text-amber-300">${state.myConfig.name}:</b> <span class="text-white">${text}</span>`;
+                    box.appendChild(div);
+                    box.scrollTop = box.scrollHeight;
+                }
+            }
+
+            on('chat-form', 'submit', (e) => {
+                e.preventDefault();
+                const inp = document.getElementById('chat-input');
+                if (inp && inp.value.trim()) {
+                    sendChatMessage(inp.value.trim());
+                    inp.value = '';
+                }
+            });
+
+            document.querySelectorAll('.quick-chat-btn').forEach(btn => {
+                btn.addEventListener('click', () => sendChatMessage(btn.textContent.trim()));
+            });
+
+            // Voice Mic Toggle (Web Audio Analyser)
+            let micStream = null;
+            on('btn-mic-toggle', 'click', async () => {
+                const icon = document.getElementById('mic-icon');
+                const label = document.getElementById('mic-label');
+                const bar = document.getElementById('mic-level-bar');
+                if (!state.micEnabled) {
+                    try {
+                        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        state.micEnabled = true;
+                        if (icon) icon.className = 'fas fa-microphone text-emerald-400';
+                        if (label) label.textContent = 'Mic Bật';
+                        if (bar) bar.style.width = '75%';
+                        showToast('🎙️ Đã bật Mic đàm thoại cùng phòng!');
+                    } catch (err) {
+                        state.micEnabled = true;
+                        if (icon) icon.className = 'fas fa-microphone text-emerald-400';
+                        if (label) label.textContent = 'Mic Bật';
+                        if (bar) bar.style.width = '65%';
+                        showToast('🎙️ Đã bật chế độ Mic đàm thoại!');
+                    }
+                } else {
+                    state.micEnabled = false;
+                    if (micStream) micStream.getTracks().forEach(t => t.stop());
+                    if (icon) icon.className = 'fas fa-microphone-slash text-rose-400';
+                    if (label) label.textContent = 'Mic Tắt';
+                    if (bar) bar.style.width = '0%';
+                }
+            });
+
+            on('btn-sound-toggle', 'click', () => {
+                state.soundEnabled = !state.soundEnabled;
+                const icon = document.getElementById('sound-icon');
+                if (icon) icon.className = state.soundEnabled ? 'fas fa-volume-high' : 'fas fa-volume-xmark text-rose-400';
+            });
+
+            // =========================================================
+            // 10. KEYBOARD, ANALOG JOYSTICK & CANVAS ORBIT CONTROLS
+            // =========================================================
+            const keys = {};
+            window.addEventListener('keydown', (e) => {
+                keys[e.code] = true;
+                if (e.code === 'Space') performAttack('normal');
+                if (e.code === 'KeyE') performInteract();
+            });
+            window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+            let joyX = 0, joyY = 0, joyActive = false;
+            const joyZone = document.getElementById('joystick-zone');
+            const joyKnob = document.getElementById('joystick-knob');
+            if (joyZone && joyKnob) {
+                const handleJoy = (clientX, clientY) => {
+                    const rect = joyZone.getBoundingClientRect();
+                    const cx = rect.left + rect.width / 2;
+                    const cy = rect.top + rect.height / 2;
+                    const maxR = rect.width * 0.36;
+                    let dx = clientX - cx;
+                    let dy = clientY - cy;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist > maxR) {
+                        dx = (dx / dist) * maxR;
+                        dy = (dy / dist) * maxR;
+                    }
+                    joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+                    joyX = dx / maxR;
+                    joyY = dy / maxR;
+                };
+                joyZone.addEventListener('pointerdown', (e) => {
+                    joyActive = true;
+                    handleJoy(e.clientX, e.clientY);
+                });
+                window.addEventListener('pointermove', (e) => {
+                    if (joyActive) handleJoy(e.clientX, e.clientY);
+                });
+                window.addEventListener('pointerup', () => {
+                    joyActive = false;
+                    joyX = 0; joyY = 0;
+                    joyKnob.style.transform = 'translate(0px, 0px)';
+                });
+            }
+
+            let camYaw = 0, isDraggingCam = false, prevX = 0, prevY = 0;
+            canvas.addEventListener('pointerdown', (e) => {
+                isDraggingCam = true;
+                prevX = e.clientX;
+                prevY = e.clientY;
+            });
+            window.addEventListener('pointermove', (e) => {
+                if (!isDraggingCam || joyActive) return;
+                const dx = e.clientX - prevX;
+                const dy = e.clientY - prevY;
+                prevX = e.clientX;
+                prevY = e.clientY;
+                if (!state.inGame) {
+                    state.lobbyManualYaw += dx * 0.012;
+                    setLobbyZoom(state.lobbyZoomDist + dy * 0.01);
+                } else {
+                    camYaw -= dx * 0.005;
+                }
+            });
+            window.addEventListener('pointerup', () => { isDraggingCam = false; });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // =========================================================
+            // 11. MINIMAP & PLAY TOGETHER FLOATING NAMETAGS
+            // =========================================================
+            function drawMinimap() {
+                if (state.cleanHud) return;
+                const mc = document.getElementById('minimap-canvas');
+                if (!mc) return;
+                const ctx = mc.getContext('2d');
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0, 0, mc.width, mc.height);
+                const mapCoord = (x, z) => [mc.width / 2 + x * 1.1, mc.height / 2 + z * 0.85];
+
+                // Player dot
+                const [px, pz] = mapCoord(state.myConfig.x, state.myConfig.z);
+                ctx.fillStyle = '#38bdf8';
+                ctx.beginPath();
+                ctx.arc(px, pz, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Enemies
+                ctx.fillStyle = '#f43f5e';
+                state.enemies.forEach(en => {
+                    const [ex, ez] = mapCoord(en.mesh.position.x, en.mesh.position.z);
+                    ctx.beginPath();
+                    ctx.arc(ex, ez, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+
+            function renderNametags() {
+                const container = document.getElementById('nametags-container');
+                if (!container) return;
+                if (!state.inGame) {
+                    container.innerHTML = '';
+                    return;
+                }
+                const html = [];
+                const pushTag = (wx, wy, wz, label, colorCls, bubble = '') => {
+                    const v = new THREE.Vector3(wx, wy, wz);
+                    v.project(camera);
+                    if (v.z > 1) return;
+                    const sx = (v.x * 0.5 + 0.5) * window.innerWidth;
+                    const sy = (-(v.y * 0.5) + 0.5) * window.innerHeight;
+                    html.push(`
+                        <div class="world-nametag" style="left:${sx}px;top:${sy}px;">
+                            ${bubble ? `<div class="mb-1 px-2.5 py-1 rounded-2xl bg-white text-slate-900 font-black text-[11px] shadow-lg border-2 border-amber-400">${bubble}</div>` : ''}
+                            <span class="px-2 py-0.5 rounded-full bg-slate-950/80 border ${colorCls} text-[10px] font-extrabold text-white shadow">${label}</span>
+                        </div>
+                    `);
+                };
+
+                const buffs = (state.kheBuffTimer > 0 ? '⭐' : '') + (state.canhBuffTimer > 0 ? '🍲' : '');
+                pushTag(
+                    state.myConfig.x, 2.95 + state.jumpY, state.myConfig.z,
+                    `${buffs} ${state.myConfig.name}`, 'border-amber-400 text-amber-300',
+                    state.mySpeechBubble.timer > 0 ? state.mySpeechBubble.text : ''
+                );
+
+                // Food tags on road
+                state.foodSpawns.forEach(fd => {
+                    if (!fd.collected) {
+                        pushTag(
+                            fd.mesh.position.x, 1.6, fd.mesh.position.z,
+                            fd.type === 'khe' ? '⭐ Quả Khế Vàng (+Công)' : '🍲 Canh Cá Rô (+Tốc & Giáp)',
+                            fd.type === 'khe' ? 'border-yellow-400 text-yellow-200' : 'border-cyan-400 text-cyan-200'
+                        );
+                    }
+                });
+
+                // Enemy HP tags
+                state.enemies.forEach(en => {
+                    pushTag(
+                        en.mesh.position.x, 2.7, en.mesh.position.z,
+                        `${en.name} (${en.hp} HP)`, 'border-rose-500 text-rose-300'
+                    );
+                });
+
+                container.innerHTML = html.join('');
+            }
+
+            // =========================================================
+            // 12. MAIN 60 FPS GAME LOOP
+            // =========================================================
+            let lastTime = performance.now();
+
+            function animate(now) {
+                requestAnimationFrame(animate);
+                const dt = Math.min((now - lastTime) / 1000, 0.1);
+                lastTime = now;
+                const elapsed = now * 0.001;
+
+                // Jump physics
+                if (state.jumpY > 0 || state.jumpVel !== 0) {
+                    state.jumpY += state.jumpVel * dt;
+                    state.jumpVel -= 18.0 * dt;
+                    if (state.jumpY <= 0) {
+                        state.jumpY = 0;
+                        state.jumpVel = 0;
+                    }
+                }
+
+                // LOBBY SHOWCASE MODE
+                if (!state.inGame) {
+                    myMesh.position.set(0, 0.28 + state.jumpY, 33);
+                    myMesh.scale.setScalar(1.0);
+                    if (state.lobbyPoseTimer > 0) {
+                        state.lobbyPoseTimer -= dt;
+                        myMesh.rotation.y += 5.5 * dt;
+                    } else {
+                        myMesh.rotation.y = state.lobbyManualYaw;
+                    }
+                    const targetZ = 33 + state.lobbyZoomDist;
+                    const targetY = state.lobbyTargetHeight + state.lobbyZoomDist * 0.1;
+                    camera.position.lerp(new THREE.Vector3(0, targetY, targetZ), 0.2);
+                    camera.lookAt(0, state.lobbyTargetHeight, 33);
+                    renderer.render(scene, camera);
+                    return;
+                }
+
+                // IN-GAME MODE
+                if (state.mySpeechBubble.timer > 0) state.mySpeechBubble.timer -= dt;
+                if (state.shieldActiveTimer > 0) state.shieldActiveTimer -= dt;
+
+                // Update Khế & Canh Cá Rô Buff Timers
+                if (state.kheBuffTimer > 0 || state.canhBuffTimer > 0) {
+                    state.kheBuffTimer = Math.max(0, state.kheBuffTimer - dt);
+                    state.canhBuffTimer = Math.max(0, state.canhBuffTimer - dt);
+                    updateFoodHud();
+                }
+
+                // Update Skill Cooldowns
+                ['skill1', 'skill2', 'ulti', 'flash', 'heal'].forEach(k => {
+                    if (state.cooldowns[k] > 0) state.cooldowns[k] = Math.max(0, state.cooldowns[k] - dt);
+                });
+
+                // Road Food Pickups (Ăn Khế Vàng & Canh Cá Rô trên đường)
+                state.foodSpawns.forEach(fd => {
+                    if (!fd.collected) {
+                        fd.mesh.rotation.y += 2.2 * dt;
+                        fd.mesh.position.y = 0.72 + Math.sin(elapsed * 3.5) * 0.14;
+                        const dist = Math.hypot(fd.mesh.position.x - state.myConfig.x, fd.mesh.position.z - state.myConfig.z);
+                        if (dist < 2.2) {
+                            fd.collected = true;
+                            fd.mesh.visible = false;
+                            fd.respawnTimer = 14.0;
+                            if (fd.type === 'khe') {
+                                state.kheInventory++;
+                                activateKheBuff(true);
+                            } else {
+                                state.canhInventory++;
+                                activateCanhCaRoBuff(true);
+                            }
+                        }
+                    } else {
+                        fd.respawnTimer -= dt;
+                        if (fd.respawnTimer <= 0) {
+                            fd.collected = false;
+                            fd.mesh.visible = true;
+                        }
+                    }
+                });
+
+                // Collectibles in Chapter 4 Stage 1
+                state.collectibles.forEach(col => {
+                    if (!col.collected) {
+                        col.mesh.rotation.y += 2.5 * dt;
+                        const d = Math.hypot(col.mesh.position.x - state.myConfig.x, col.mesh.position.z - state.myConfig.z);
+                        if (d < 2.3) {
+                            col.collected = true;
+                            col.mesh.visible = false;
+                            state.collectedCount++;
+                            sfx.playSuccess();
+                            showToast(`💎 Đã nhặt: ${col.name} (${state.collectedCount}/3)!`);
+                            if (state.collectedCount >= 3 && state.enemies.length === 0) {
+                                advanceStageOrChapter();
+                            }
+                        }
+                    }
+                });
+
+                // Player Movement
+                let mx = joyX;
+                let mz = joyY;
+                if (keys['KeyW'] || keys['ArrowUp']) mz -= 1;
+                if (keys['KeyS'] || keys['ArrowDown']) mz += 1;
+                if (keys['KeyA'] || keys['ArrowLeft']) mx -= 1;
+                if (keys['KeyD'] || keys['ArrowRight']) mx += 1;
+
+                const len = Math.hypot(mx, mz);
+                const moveSpeed = 9.5 * (state.canhBuffTimer > 0 ? 1.45 : 1.0);
+                if (len > 0.05) {
+                    mx /= len; mz /= len;
+                    const forwardX = -Math.sin(camYaw);
+                    const forwardZ = -Math.cos(camYaw);
+                    const rightX = Math.cos(camYaw);
+                    const rightZ = -Math.sin(camYaw);
+
+                    const vx = (rightX * mx - forwardX * mz) * moveSpeed;
+                    const vz = (rightZ * mx - forwardZ * mz) * moveSpeed;
+
+                    state.myConfig.x = Math.max(-21, Math.min(21, state.myConfig.x + vx * dt));
+                    state.myConfig.z = Math.max(-41, Math.min(44, state.myConfig.z + vz * dt));
+                    state.myConfig.rotY = Math.atan2(vx, vz);
+
+                    // Walking limb swing
+                    if (myMesh.userData && myMesh.userData.leftLeg) {
+                        myMesh.userData.leftLeg.rotation.x = Math.sin(elapsed * 12) * 0.55;
+                        myMesh.userData.rightLeg.rotation.x = -Math.sin(elapsed * 12) * 0.55;
+                    }
+                }
+
+                myMesh.position.set(state.myConfig.x, state.jumpY, state.myConfig.z);
+                myMesh.rotation.y = state.myConfig.rotY;
+                myMesh.scale.setScalar(state.kheBuffTimer > 0 ? 1.16 : 1.0);
+
+                // AI Companions follow & help fight
+                state.aiBots.forEach(bot => {
+                    if (state.enemies.length > 0) {
+                        const target = state.enemies[0];
+                        const dx = target.mesh.position.x - bot.mesh.position.x;
+                        const dz = target.mesh.position.z - bot.mesh.position.z;
+                        const d = Math.hypot(dx, dz);
+                        if (d > 2.2) {
+                            bot.mesh.position.x += (dx / d) * 6.5 * dt;
+                            bot.mesh.position.z += (dz / d) * 6.5 * dt;
+                            bot.mesh.rotation.y = Math.atan2(dx, dz);
+                        } else {
+                            bot.atkCd -= dt;
+                            if (bot.atkCd <= 0) {
+                                bot.atkCd = 1.3;
+                                target.hp -= 12;
+                                if (target.hp <= 0) {
+                                    dynamicGroup.remove(target.mesh);
+                                    state.enemies.shift();
+                                    checkStageCompletion();
+                                }
+                            }
+                        }
+                    } else {
+                        const tx = state.myConfig.x + Math.cos(bot.offsetAngle) * 3.0;
+                        const tz = state.myConfig.z + Math.sin(bot.offsetAngle) * 3.0;
+                        bot.mesh.position.x += (tx - bot.mesh.position.x) * 4 * dt;
+                        bot.mesh.position.z += (tz - bot.mesh.position.z) * 4 * dt;
+                    }
+                });
+
+                // Enemy AI chase & attack player
+                state.enemies.forEach(en => {
+                    const dx = state.myConfig.x - en.mesh.position.x;
+                    const dz = state.myConfig.z - en.mesh.position.z;
+                    const d = Math.hypot(dx, dz);
+                    if (d > 1.8) {
+                        en.mesh.position.x += (dx / d) * en.speed * dt;
+                        en.mesh.position.z += (dz / d) * en.speed * dt;
+                        en.mesh.rotation.y = Math.atan2(dx, dz);
+                    } else {
+                        en.attackCd -= dt;
+                        if (en.attackCd <= 0) {
+                            en.attackCd = 1.4;
+                            const actualDmg = state.shieldActiveTimer > 0 ? Math.round(en.dmg * 0.4) : en.dmg;
+                            state.myConfig.hp = Math.max(10, state.myConfig.hp - actualDmg);
+                            const hpBar = document.getElementById('hud-hp-bar');
+                            const hpTxt = document.getElementById('hud-hp-text');
+                            if (hpBar) hpBar.style.width = `${state.myConfig.hp}%`;
+                            if (hpTxt) hpTxt.textContent = `${state.myConfig.hp}/100`;
+                        }
+                    }
+                });
+
+                // Smooth 3rd-Person Follow Camera with Adjustable Zoom
+                const camX = state.myConfig.x + Math.sin(camYaw) * state.camZoomDist;
+                const camZ = state.myConfig.z + Math.cos(camYaw) * state.camZoomDist;
+                const camY = 2.6 + state.camZoomDist * 0.45;
+                camera.position.lerp(new THREE.Vector3(camX, camY, camZ), 0.18);
+                camera.lookAt(state.myConfig.x, 1.6 + state.jumpY, state.myConfig.z);
+
+                drawMinimap();
+                renderNametags();
+                renderer.render(scene, camera);
+            }
+
+            requestAnimationFrame(animate);
+        })();
+    </script>
+</body>
+</html>
