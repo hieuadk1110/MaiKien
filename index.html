@@ -97,6 +97,20 @@
             z-index: 25;
         }
 
+        /* Mobile Bottom Sheet & Touch Optimization */
+        .mobile-tab-active {
+            background: linear-gradient(135deg, #facc15 0%, #f59e0b 100%);
+            color: #0f172a !important;
+            font-weight: 900;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+        }
+
+        @media (max-width: 1023px) {
+            .lobby-drawer-panel {
+                max-height: 46vh;
+            }
+        }
+
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.4); }
         ::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.6); border-radius: 9999px; }
@@ -112,13 +126,179 @@
     <div id="nametags-container" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
 
     <!-- ========================================================= -->
-    <!-- LOBBY MENU: PLAY TOGETHER 3D CHARACTER + ROOM + DRESS-UP  -->
+    <!-- LOBBY MENU: MOBILE-FIRST 3D STAGE TOP + TAB DRAWER BOTTOM -->
     <!-- ========================================================= -->
-    <div id="menu-overlay" class="absolute inset-0 z-30 flex flex-col lg:flex-row items-stretch justify-between p-2 sm:p-3.5 pointer-events-none overflow-y-auto lg:overflow-hidden">
+    <div id="menu-overlay" class="absolute inset-0 z-30 flex flex-col lg:flex-row items-stretch justify-between p-2 sm:p-3.5 pointer-events-none overflow-hidden">
         
-        <!-- LEFT PANEL: ROOM CREATION, PASSWORD, APPROVAL & DIFFICULTY -->
-        <div class="w-full lg:w-[320px] xl:w-[340px] flex flex-col gap-2 pointer-events-auto my-auto max-h-full overflow-y-auto pr-0.5">
-            <div class="pt-card rounded-3xl p-3 border-l-4 border-amber-400">
+        <!-- TOP / CENTER 3D CHARACTER VIEWPORT (100% CLEAR ON MOBILE TOP HALF) -->
+        <div class="order-1 lg:order-2 flex-1 flex flex-col items-center justify-between py-1 pointer-events-none min-h-[44vh] lg:min-h-0">
+            <!-- Compact Top Header -->
+            <div class="w-full flex items-center justify-between lg:justify-center gap-2 px-1">
+                <div class="bg-slate-950/85 text-white px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1.5 pointer-events-auto border border-amber-400/80 shadow-lg">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span class="truncate">GIẢI CỨU KIÊN & MAI NAM SÁCH</span>
+                </div>
+                <button type="button" id="btn-random-char-mobile" class="lg:hidden btn-game bg-pink-500/90 text-white text-[11px] font-black px-3 py-1 rounded-full pointer-events-auto shadow-lg border border-white/40">
+                    <i class="fas fa-shuffle mr-1"></i>Đổi Ngẫu Nhiên
+                </button>
+            </div>
+
+            <!-- Floating Quick Camera & Zoom Pill right below the 3D Character -->
+            <div class="pt-card px-2.5 py-1.5 rounded-2xl flex flex-col items-center gap-1.5 pointer-events-auto mt-auto border border-amber-400/60 shadow-xl">
+                <div class="flex items-center gap-2 w-60 sm:w-72">
+                    <button type="button" id="btn-lobby-zoom-in" class="w-8 h-8 rounded-xl bg-amber-400 active:bg-amber-300 text-slate-950 font-black text-sm flex items-center justify-center shadow">
+                        <i class="fas fa-magnifying-glass-plus"></i>
+                    </button>
+                    <div class="flex-1 flex flex-col">
+                        <div class="flex justify-between text-[10px] font-extrabold text-amber-200">
+                            <span>Vuốt/Chụm 2 ngón để Zoom</span>
+                            <span id="lobby-zoom-label" class="text-emerald-300">Toàn Thân</span>
+                        </div>
+                        <input id="slider-lobby-zoom" type="range" min="1.35" max="5.2" step="0.05" value="2.9" 
+                            class="w-full accent-amber-400 cursor-pointer h-2 bg-slate-800 rounded-lg">
+                    </div>
+                    <button type="button" id="btn-lobby-zoom-out" class="w-8 h-8 rounded-xl bg-slate-800 active:bg-slate-700 text-white font-black text-sm flex items-center justify-center border border-slate-600">
+                        <i class="fas fa-magnifying-glass-minus"></i>
+                    </button>
+                </div>
+
+                <div class="flex items-center justify-center gap-1">
+                    <button type="button" id="btn-lobby-rot-left" class="btn-game bg-slate-800 px-2.5 py-1 rounded-xl text-[11px] font-bold text-slate-200 border border-slate-600">
+                        <i class="fas fa-rotate-left"></i>
+                    </button>
+                    <button type="button" id="btn-lobby-zoom-face" class="btn-game bg-amber-500/30 px-2.5 py-1 rounded-xl text-[11px] font-black text-amber-200 border border-amber-400/70">
+                        🔍 Soi Mặt & Mụn
+                    </button>
+                    <button type="button" id="btn-lobby-zoom-body" class="btn-game bg-cyan-500/30 px-2.5 py-1 rounded-xl text-[11px] font-black text-cyan-200 border border-cyan-400/70">
+                        🧍 Toàn Thân
+                    </button>
+                    <button type="button" id="btn-lobby-pose" class="btn-game bg-pink-500/30 px-2.5 py-1 rounded-xl text-[11px] font-black text-pink-200 border border-pink-400/70">
+                        💃 Tạo Dáng
+                    </button>
+                    <button type="button" id="btn-lobby-rot-right" class="btn-game bg-slate-800 px-2.5 py-1 rounded-xl text-[11px] font-bold text-slate-200 border border-slate-600">
+                        <i class="fas fa-rotate-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MOBILE TAB SWITCHER + START BUTTON BAR (ONLY ON MOBILE/TABLET) -->
+        <div class="order-2 lg:hidden w-full pointer-events-auto flex flex-col gap-1.5 mt-1">
+            <div class="grid grid-cols-2 gap-1.5 bg-slate-950/90 p-1 rounded-2xl border border-slate-700">
+                <button type="button" id="mob-tab-char" class="mobile-tab-active py-1.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5">
+                    <i class="fas fa-face-smile-wink"></i> 1. Tạo Nhân Vật & Mụn
+                </button>
+                <button type="button" id="mob-tab-room" class="py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center justify-center gap-1.5">
+                    <i class="fas fa-sliders"></i> 2. Phòng & Độ Khó
+                </button>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL (TAB 1 ON MOBILE): CHARACTER CUSTOMIZATION -->
+        <div id="lobby-panel-char" class="order-3 lg:order-3 w-full lg:w-[330px] xl:w-[350px] pt-card rounded-3xl p-2.5 sm:p-3 pointer-events-auto my-auto lobby-drawer-panel overflow-y-auto">
+            <div class="hidden lg:flex items-center justify-between border-b border-slate-700/80 pb-2 mb-2">
+                <div>
+                    <h2 class="text-sm sm:text-base font-black text-white flex items-center gap-1.5">
+                        <i class="fas fa-wand-magic-sparkles text-pink-400"></i> TẠO NHÂN VẬT 3D
+                    </h2>
+                    <p class="text-[10px] text-slate-300">Tự động phóng cận mặt khi chỉnh mụn cứt ruồi</p>
+                </div>
+                <button type="button" id="btn-random-char" class="btn-game bg-pink-500/20 hover:bg-pink-500/30 border border-pink-400/50 text-pink-300 text-[11px] font-bold px-2.5 py-1 rounded-lg">
+                    <i class="fas fa-shuffle mr-1"></i>Ngẫu nhiên
+                </button>
+            </div>
+
+            <div class="space-y-2 text-xs">
+                <!-- Gender Selection -->
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="gender-male" class="btn-game py-2 rounded-xl font-black border-2 border-blue-400 bg-blue-500/25 text-blue-200 flex items-center justify-center gap-1.5 text-xs">
+                        <i class="fas fa-mars"></i> NAM (Hoàng Tử)
+                    </button>
+                    <button type="button" id="gender-female" class="btn-game py-2 rounded-xl font-black border border-slate-700 bg-slate-800/70 text-slate-300 flex items-center justify-center gap-1.5 text-xs">
+                        <i class="fas fa-venus"></i> NỮ (Công Chúa)
+                    </button>
+                </div>
+
+                <!-- Touch-friendly Hair & Face Buttons + Dropdowns -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-300 uppercase block mb-0.5">Kiểu Tóc 3D</label>
+                        <select id="select-hair-style" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-2.5 py-2 font-bold text-white outline-none focus:border-amber-400 text-xs">
+                            <option value="spiky">Tóc Vuốt Nhọn</option>
+                            <option value="sidepart">Tóc Rẽ Ngôi</option>
+                            <option value="long">Tóc Dài Hoàng Gia</option>
+                            <option value="twintail">Tóc Buộc 2 Chùm</option>
+                            <option value="bun">Tóc Búi Cao</option>
+                            <option value="afro">Tóc Xù Cá Tính</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-300 uppercase block mb-0.5">Khuôn Mặt</label>
+                        <select id="select-face-style" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-2.5 py-2 font-bold text-white outline-none focus:border-amber-400 text-xs">
+                            <option value="heroic">Cười Tự Tin</option>
+                            <option value="cute">Mắt Long Lanh</option>
+                            <option value="cool">Ngầu Lạnh Lùng</option>
+                            <option value="happy">Tươi Rạng Rỡ</option>
+                            <option value="fierce">Quyết Chiến</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Larger Touch Swatches for Hair & Outfit Colors -->
+                <div class="grid grid-cols-2 gap-2 bg-slate-900/70 p-2 rounded-2xl border border-slate-800">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-300 uppercase block mb-1">Màu Tóc</label>
+                        <div class="flex items-center justify-between" id="hair-color-palette">
+                            <button type="button" data-color="#111827" class="w-6 h-6 rounded-full bg-gray-900 ring-2 ring-amber-400"></button>
+                            <button type="button" data-color="#78350f" class="w-6 h-6 rounded-full bg-amber-900"></button>
+                            <button type="button" data-color="#facc15" class="w-6 h-6 rounded-full bg-yellow-400"></button>
+                            <button type="button" data-color="#ef4444" class="w-6 h-6 rounded-full bg-red-500"></button>
+                            <button type="button" data-color="#ec4899" class="w-6 h-6 rounded-full bg-pink-500"></button>
+                            <button type="button" data-color="#38bdf8" class="w-6 h-6 rounded-full bg-sky-400"></button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-300 uppercase block mb-1">Màu Áo</label>
+                        <div class="flex items-center justify-between" id="outfit-color-palette">
+                            <button type="button" data-outfit="#2563eb" class="w-6 h-6 rounded-full bg-blue-600 ring-2 ring-amber-400"></button>
+                            <button type="button" data-outfit="#db2777" class="w-6 h-6 rounded-full bg-pink-600"></button>
+                            <button type="button" data-outfit="#16a34a" class="w-6 h-6 rounded-full bg-green-600"></button>
+                            <button type="button" data-outfit="#eab308" class="w-6 h-6 rounded-full bg-yellow-500"></button>
+                            <button type="button" data-outfit="#9333ea" class="w-6 h-6 rounded-full bg-purple-600"></button>
+                            <button type="button" data-outfit="#e11d48" class="w-6 h-6 rounded-full bg-rose-600"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MOLE / BEAUTY MARK ("MỤN CỨT RUỒI") STUDIO -->
+                <div class="bg-slate-900/95 border border-amber-400/50 rounded-2xl p-2.5 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-black text-amber-300 uppercase flex items-center gap-1">
+                            <i class="fas fa-circle-dot"></i> Vị Trí Mụn Cứt Ruồi
+                        </span>
+                        <span id="mole-badge" class="text-[10px] font-bold text-emerald-300">Má phải duyên dáng</span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-1.5 text-[11px] font-bold">
+                        <button type="button" data-mole="none" class="mole-btn py-1.5 px-1.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-300">Không có</button>
+                        <button type="button" data-mole="right_cheek" class="mole-btn py-1.5 px-1.5 rounded-xl border-2 border-amber-400 bg-amber-500/20 text-amber-200">Má Phải</button>
+                        <button type="button" data-mole="left_cheek" class="mole-btn py-1.5 px-1.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-300">Má Trái</button>
+                        <button type="button" data-mole="under_eye" class="mole-btn py-1.5 px-1.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-300">Dưới Mắt</button>
+                        <button type="button" data-mole="mouth_corner" class="mole-btn py-1.5 px-1.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-300">Khóe Miệng</button>
+                        <button type="button" data-mole="forehead" class="mole-btn py-1.5 px-1.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-300">Giữa Trán</button>
+                    </div>
+
+                    <div class="flex items-center gap-2 pt-0.5">
+                        <span class="text-[11px] text-slate-200 font-bold whitespace-nowrap">Độ to mụn:</span>
+                        <input id="slider-mole-size" type="range" min="1" max="4.5" step="0.25" value="2.2" class="w-full accent-amber-400 cursor-pointer h-2">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEFT PANEL (TAB 2 ON MOBILE): ROOM CREATION, PASSWORD & DIFFICULTY -->
+        <div id="lobby-panel-room" class="order-4 lg:order-1 hidden lg:flex w-full lg:w-[330px] xl:w-[350px] flex-col gap-2 pointer-events-auto my-auto lobby-drawer-panel overflow-y-auto pr-0.5">
+            <div class="hidden lg:block pt-card rounded-3xl p-3 border-l-4 border-amber-400">
                 <div class="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wider text-amber-300 mb-0.5">
                     <span><i class="fas fa-star mr-1"></i>Play Together 3D • Tối Đa 6 Người</span>
                     <span class="bg-emerald-500/30 text-emerald-200 px-2 py-0.5 rounded-full">15 Màn • 60 FPS</span>
@@ -134,7 +314,7 @@
             <div class="pt-card rounded-3xl p-3 flex flex-col gap-2">
                 <div class="flex items-center justify-between border-b border-slate-700/80 pb-1.5">
                     <span class="text-xs font-black text-amber-300 uppercase flex items-center gap-1.5">
-                        <i class="fas fa-house-user"></i> Phòng Chơi Online (6 Người)
+                        <i class="fas fa-house-user"></i> Phòng Chơi (Tối Đa 6 Người)
                     </span>
                     <div class="flex bg-slate-900 rounded-xl p-0.5 border border-slate-700 text-[11px] font-bold">
                         <button type="button" id="tab-host-room" class="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 font-black">Tạo Phòng</button>
@@ -154,16 +334,16 @@
                         <div>
                             <label class="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">Tên Phòng</label>
                             <input id="input-room-code" type="text" maxlength="16" value="KIEN-MAI-VIP" 
-                                class="w-full bg-slate-900/90 border border-slate-700 focus:border-amber-400 rounded-xl px-2.5 py-1 text-xs font-black text-amber-400 uppercase outline-none">
+                                class="w-full bg-slate-900/90 border border-slate-700 focus:border-amber-400 rounded-xl px-2.5 py-1.5 text-xs font-black text-amber-400 uppercase outline-none">
                         </div>
                         <div>
                             <label class="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">Mật Khẩu Phòng</label>
                             <input id="input-room-pass" type="password" maxlength="12" placeholder="Trống = Tự do" 
-                                class="w-full bg-slate-900/90 border border-slate-700 focus:border-amber-400 rounded-xl px-2.5 py-1 text-xs font-bold text-emerald-300 outline-none">
+                                class="w-full bg-slate-900/90 border border-slate-700 focus:border-amber-400 rounded-xl px-2.5 py-1.5 text-xs font-bold text-emerald-300 outline-none">
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-between bg-slate-900/80 px-2.5 py-1 rounded-xl border border-slate-800">
+                    <div class="flex items-center justify-between bg-slate-900/80 px-2.5 py-1.5 rounded-xl border border-slate-800">
                         <div class="text-[11px] text-slate-200 font-semibold">
                             <i class="fas fa-user-check text-amber-400 mr-1"></i> Chủ phòng phê duyệt người vào
                         </div>
@@ -181,189 +361,44 @@
                 <div>
                     <label class="text-[10px] font-bold text-slate-300 uppercase block mb-1">Chọn 3 Chế Độ Độ Khó</label>
                     <div class="grid grid-cols-3 gap-1.5">
-                        <button type="button" data-diff="easy" class="diff-btn btn-game rounded-xl p-1.5 border-2 border-emerald-500 bg-emerald-500/20 text-left">
+                        <button type="button" data-diff="easy" class="diff-btn btn-game rounded-xl p-2 border-2 border-emerald-500 bg-emerald-500/20 text-left">
                             <div class="font-black text-emerald-300 text-xs flex justify-between"><span>DỄ</span><i class="fas fa-seedling"></i></div>
-                            <div class="text-[9px] text-slate-300">Nhiều Khế & Cá</div>
+                            <div class="text-[9px] text-slate-300">Dễ chơi ĐT</div>
                         </button>
-                        <button type="button" data-diff="medium" class="diff-btn btn-game rounded-xl p-1.5 border border-slate-700 bg-slate-800/70 text-left">
-                            <div class="font-black text-amber-300 text-xs flex justify-between"><span>TRUNG BÌNH</span><i class="fas fa-fire"></i></div>
-                            <div class="text-[9px] text-slate-300">Chuẩn Cân Bằng</div>
+                        <button type="button" data-diff="medium" class="diff-btn btn-game rounded-xl p-2 border border-slate-700 bg-slate-800/70 text-left">
+                            <div class="font-black text-amber-300 text-xs flex justify-between"><span>VỪA</span><i class="fas fa-fire"></i></div>
+                            <div class="text-[9px] text-slate-300">Cân Bằng</div>
                         </button>
-                        <button type="button" data-diff="hard" class="diff-btn btn-game rounded-xl p-1.5 border border-slate-700 bg-slate-800/70 text-left">
+                        <button type="button" data-diff="hard" class="diff-btn btn-game rounded-xl p-2 border border-slate-700 bg-slate-800/70 text-left">
                             <div class="font-black text-rose-400 text-xs flex justify-between"><span>KHÓ</span><i class="fas fa-skull"></i></div>
-                            <div class="text-[9px] text-slate-300">Trùm Siêu Khỏe</div>
+                            <div class="text-[9px] text-slate-300">Trùm Khỏe</div>
                         </button>
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between bg-slate-900/70 px-2.5 py-1 rounded-xl border border-slate-800">
+                <div class="flex items-center justify-between bg-slate-900/70 px-2.5 py-1.5 rounded-xl border border-slate-800">
                     <div class="text-[11px] text-slate-300">
                         <i class="fas fa-users text-cyan-400 mr-1"></i> Tự động thêm đồng đội đủ 6 người
                     </div>
                     <input id="toggle-ai-bots" type="checkbox" checked class="w-4 h-4 accent-amber-500 rounded cursor-pointer">
                 </div>
-
-                <!-- MAIN START BUTTON (Dual bound via onclick & addEventListener so it never fails) -->
-                <button type="button" id="btn-start-game" onclick="window.startGameNow && window.startGameNow()" class="btn-game gold-gradient text-slate-950 font-black text-sm sm:text-base py-3 rounded-2xl shadow-lg shadow-amber-500/40 flex items-center justify-center gap-2 cursor-pointer border-2 border-white">
+                <!-- Sticky Desktop Start Button -->
+                <button type="button" id="btn-start-game" onclick="window.startGameNow && window.startGameNow()" class="hidden lg:flex btn-game gold-gradient text-slate-950 font-black text-base py-3 rounded-2xl shadow-lg shadow-amber-500/40 items-center justify-center gap-2 cursor-pointer border-2 border-white">
                     <i class="fas fa-play text-base"></i> VÀO GAME CHƠI NGAY!
                 </button>
             </div>
         </div>
 
-        <!-- CENTER COLUMN: 3D CHARACTER LOBBY STAGE WITH ZOOM IN/OUT & ROTATE -->
-        <div class="flex-1 flex flex-col items-center justify-between py-1 pointer-events-none min-h-[250px] lg:min-h-0">
-            <div class="bg-white/95 text-slate-900 px-4 py-1.5 rounded-full text-xs font-black flex items-center gap-2 pointer-events-auto border-2 border-amber-400 shadow-lg">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-                <span>SẢNH CHỜ 3D • THU PHÓNG & XOAY NHÂN VẬT TRỰC TIẾP</span>
-            </div>
-
-            <!-- Interactive Lobby Zoom Slider & Camera Preset Buttons -->
-            <div class="pt-card px-3.5 py-2.5 rounded-3xl flex flex-col items-center gap-2 pointer-events-auto mt-auto border border-amber-400/50">
-                <div class="flex items-center gap-2 w-64 sm:w-80">
-                    <button type="button" id="btn-lobby-zoom-in" class="w-8 h-8 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-sm flex items-center justify-center shadow" title="Phóng to mặt">
-                        <i class="fas fa-magnifying-glass-plus"></i>
-                    </button>
-                    <div class="flex-1 flex flex-col">
-                        <div class="flex justify-between text-[10px] font-extrabold text-amber-200 mb-0.5">
-                            <span>Phóng To Mặt & Mụn</span>
-                            <span id="lobby-zoom-label">Toàn Thân</span>
-                        </div>
-                        <input id="slider-lobby-zoom" type="range" min="1.35" max="5.5" step="0.05" value="3.2" 
-                            class="w-full accent-amber-400 cursor-pointer h-2 bg-slate-800 rounded-lg">
-                    </div>
-                    <button type="button" id="btn-lobby-zoom-out" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-sm flex items-center justify-center border border-slate-600" title="Thu nhỏ toàn thân">
-                        <i class="fas fa-magnifying-glass-minus"></i>
-                    </button>
-                </div>
-
-                <div class="flex flex-wrap items-center justify-center gap-1.5">
-                    <button type="button" id="btn-lobby-rot-left" class="btn-game bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-xl text-[11px] font-bold text-slate-200 border border-slate-600">
-                        <i class="fas fa-rotate-left mr-1"></i>Xoay Trái
-                    </button>
-                    <button type="button" id="btn-lobby-zoom-face" class="btn-game bg-amber-500/25 hover:bg-amber-500/40 px-3 py-1 rounded-xl text-[11px] font-black text-amber-300 border border-amber-400/60">
-                        <i class="fas fa-face-smile-wink mr-1"></i>Soi Rõ Mặt & Mụn
-                    </button>
-                    <button type="button" id="btn-lobby-zoom-body" class="btn-game bg-cyan-500/25 hover:bg-cyan-500/40 px-3 py-1 rounded-xl text-[11px] font-black text-cyan-200 border border-cyan-400/60">
-                        <i class="fas fa-person mr-1"></i>Toàn Thân
-                    </button>
-                    <button type="button" id="btn-lobby-pose" class="btn-game bg-pink-500/25 hover:bg-pink-500/40 px-3 py-1 rounded-xl text-[11px] font-black text-pink-200 border border-pink-400/60">
-                        <i class="fas fa-heart mr-1"></i>Nhảy Tạo Dáng
-                    </button>
-                    <button type="button" id="btn-lobby-rot-right" class="btn-game bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-xl text-[11px] font-bold text-slate-200 border border-slate-600">
-                        Xoay Phải<i class="fas fa-rotate-right ml-1"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- RIGHT PANEL: CHARACTER CUSTOMIZATION (GENDER, HAIR, FACE, MOLE / MỤN CỨT RUỒI) -->
-        <div class="w-full lg:w-[320px] xl:w-[340px] pt-card rounded-3xl p-3 pointer-events-auto my-auto max-h-full overflow-y-auto">
-            <div class="flex items-center justify-between border-b border-slate-700/80 pb-2 mb-2">
-                <div>
-                    <h2 class="text-sm sm:text-base font-black text-white flex items-center gap-1.5">
-                        <i class="fas fa-wand-magic-sparkles text-pink-400"></i> TẠO NHÂN VẬT 3D
-                    </h2>
-                    <p class="text-[10px] text-slate-300">Tự động phóng cận mặt khi chỉnh mụn cứt ruồi</p>
-                </div>
-                <button type="button" id="btn-random-char" class="btn-game bg-pink-500/20 hover:bg-pink-500/30 border border-pink-400/50 text-pink-300 text-[11px] font-bold px-2.5 py-1 rounded-lg">
-                    <i class="fas fa-shuffle mr-1"></i>Ngẫu nhiên
-                </button>
-            </div>
-
-            <div class="space-y-2.5 text-xs">
-                <!-- Gender Selection -->
-                <div>
-                    <label class="text-[10px] font-bold text-slate-300 uppercase block mb-1">1. Giới Tính Nhân Vật</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" id="gender-male" class="btn-game py-1.5 rounded-xl font-black border-2 border-blue-400 bg-blue-500/25 text-blue-200 flex items-center justify-center gap-1.5">
-                            <i class="fas fa-mars"></i> NAM (Hoàng Tử)
-                        </button>
-                        <button type="button" id="gender-female" class="btn-game py-1.5 rounded-xl font-black border border-slate-700 bg-slate-800/70 text-slate-300 flex items-center justify-center gap-1.5">
-                            <i class="fas fa-venus"></i> NỮ (Công Chúa)
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Hair Style & Face Expression -->
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-300 uppercase block mb-1">2. Kiểu Tóc 3D</label>
-                        <select id="select-hair-style" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 font-bold text-white outline-none focus:border-amber-400">
-                            <option value="spiky">Tóc Vuốt Nhọn</option>
-                            <option value="sidepart">Tóc Rẽ Ngôi</option>
-                            <option value="long">Tóc Dài Hoàng Gia</option>
-                            <option value="twintail">Tóc Buộc 2 Chùm</option>
-                            <option value="bun">Tóc Búi Cao</option>
-                            <option value="afro">Tóc Xù Cá Tính</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-300 uppercase block mb-1">3. Khuôn Mặt</label>
-                        <select id="select-face-style" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 font-bold text-white outline-none focus:border-amber-400">
-                            <option value="heroic">Cười Tự Tin</option>
-                            <option value="cute">Mắt Long Lanh</option>
-                            <option value="cool">Ngầu Lạnh Lùng</option>
-                            <option value="happy">Tươi Rạng Rỡ</option>
-                            <option value=" fierce">Quyết Chiến</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Hair Color & Outfit Color -->
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-300 uppercase block mb-1">Màu Tóc</label>
-                        <div class="flex items-center gap-1.5" id="hair-color-palette">
-                            <button type="button" data-color="#111827" class="w-5 h-5 rounded-full bg-gray-900 ring-2 ring-amber-400"></button>
-                            <button type="button" data-color="#78350f" class="w-5 h-5 rounded-full bg-amber-900"></button>
-                            <button type="button" data-color="#facc15" class="w-5 h-5 rounded-full bg-yellow-400"></button>
-                            <button type="button" data-color="#ef4444" class="w-5 h-5 rounded-full bg-red-500"></button>
-                            <button type="button" data-color="#ec4899" class="w-5 h-5 rounded-full bg-pink-500"></button>
-                            <button type="button" data-color="#38bdf8" class="w-5 h-5 rounded-full bg-sky-400"></button>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-300 uppercase block mb-1">Màu Trang Phục</label>
-                        <div class="flex items-center gap-1.5" id="outfit-color-palette">
-                            <button type="button" data-outfit="#2563eb" class="w-5 h-5 rounded-full bg-blue-600 ring-2 ring-amber-400"></button>
-                            <button type="button" data-outfit="#db2777" class="w-5 h-5 rounded-full bg-pink-600"></button>
-                            <button type="button" data-outfit="#16a34a" class="w-5 h-5 rounded-full bg-green-600"></button>
-                            <button type="button" data-outfit="#eab308" class="w-5 h-5 rounded-full bg-yellow-500"></button>
-                            <button type="button" data-outfit="#9333ea" class="w-5 h-5 rounded-full bg-purple-600"></button>
-                            <button type="button" data-outfit="#e11d48" class="w-5 h-5 rounded-full bg-rose-600"></button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- MOLE / BEAUTY MARK ("MỤN CỨT RUỒI") STUDIO -->
-                <div class="bg-slate-900/95 border border-amber-400/50 rounded-2xl p-2.5 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[11px] font-black text-amber-300 uppercase flex items-center gap-1">
-                            <i class="fas fa-circle-dot"></i> 4. Mụn Cứt Ruồi Phong Thủy
-                        </span>
-                        <span id="mole-badge" class="text-[10px] font-bold text-emerald-300">Má phải duyên dáng</span>
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-1 text-[10px] font-bold">
-                        <button type="button" data-mole="none" class="mole-btn py-1 px-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300">Không có</button>
-                        <button type="button" data-mole="right_cheek" class="mole-btn py-1 px-1.5 rounded-lg border-2 border-amber-400 bg-amber-500/20 text-amber-200">Má Phải</button>
-                        <button type="button" data-mole="left_cheek" class="mole-btn py-1 px-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300">Má Trái</button>
-                        <button type="button" data-mole="under_eye" class="mole-btn py-1 px-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300">Dưới Mắt</button>
-                        <button type="button" data-mole="mouth_corner" class="mole-btn py-1 px-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300">Khóe Miệng</button>
-                        <button type="button" data-mole="forehead" class="mole-btn py-1 px-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300">Giữa Trán</button>
-                    </div>
-
-                    <div class="flex items-center gap-2 pt-0.5">
-                        <span class="text-[10px] text-slate-300 font-bold whitespace-nowrap">Độ to mụn:</span>
-                        <input id="slider-mole-size" type="range" min="1" max="4.5" step="0.25" value="2.2" class="w-full accent-amber-400 cursor-pointer h-1.5">
-                    </div>
-                </div>
-            </div>
+        <!-- STICKY MOBILE START BUTTON (ALWAYS VISIBLE AT BOTTOM ON PHONES) -->
+        <div class="order-5 lg:hidden w-full pointer-events-auto pt-1.5">
+            <button type="button" id="btn-start-game-mobile" onclick="window.startGameNow && window.startGameNow()" class="w-full btn-game gold-gradient text-slate-950 font-black text-sm py-2.5 rounded-2xl shadow-xl flex items-center justify-center gap-2 border-2 border-white">
+                <i class="fas fa-play"></i> VÀO GAME CHƠI NGAY (MƯỢT 60 FPS)
+            </button>
         </div>
     </div>
 
     <!-- ========================================================= -->
-    <!-- IN-GAME HUD OVERLAY (PLAY TOGETHER CLEAN VIEW + MOBA)     -->
+    <!-- IN-GAME HUD OVERLAY (MOBILE-OPTIMIZED + AUTO-AIM/PLAY)    -->
     <!-- ========================================================= -->
     <div id="hud-overlay" class="hidden clean-hud-active absolute inset-0 z-20 pointer-events-none flex flex-col justify-between p-2 sm:p-3">
         
@@ -456,6 +491,11 @@
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                         <span id="hud-fps">60 FPS</span>
                     </div>
+
+                    <button type="button" id="btn-auto-battle" class="btn-game pt-card px-2.5 py-1.5 rounded-xl text-[11px] font-black text-amber-300 border border-amber-400/60 flex items-center gap-1">
+                        <i class="fas fa-robot"></i>
+                        <span id="auto-battle-label">Tự Đánh: Tắt</span>
+                    </button>
 
                     <button type="button" id="btn-clean-hud" class="btn-game pt-card px-2.5 py-1.5 rounded-xl text-[11px] font-black text-emerald-300 border border-emerald-400/50 flex items-center gap-1">
                         <i id="clean-hud-icon" class="fas fa-eye"></i>
@@ -691,6 +731,7 @@
             const state = {
                 inGame: false,
                 cleanHud: true, // Default ON: hides non-essential clutter while playing
+                autoBattle: false, // Mobile helper: auto target & fight when toggled
                 roomCode: 'KIEN-MAI-VIP',
                 roomPass: '',
                 requireApproval: true,
@@ -703,7 +744,7 @@
                 soundEnabled: true,
                 micEnabled: false,
                 camZoomDist: 9.5,
-                lobbyZoomDist: 3.2,
+                lobbyZoomDist: 2.9,
                 lobbyTargetHeight: 1.45,
                 lobbyManualYaw: 0,
                 lobbyPoseTimer: 0,
@@ -1430,31 +1471,52 @@
             function performAttack(skillType = 'normal') {
                 if (!state.inGame) return;
 
+                // SMART MOBILE AUTO-AIM & LUNGE: Automatically face & step toward nearest enemy
+                let nearestEnemy = null;
+                let nearestDist = Infinity;
+                for (const en of state.enemies) {
+                    const d = Math.hypot(en.mesh.position.x - state.myConfig.x, en.mesh.position.z - state.myConfig.z);
+                    if (d < nearestDist) {
+                        nearestDist = d;
+                        nearestEnemy = en;
+                    }
+                }
+                if (nearestEnemy && nearestDist < 10.5) {
+                    const dx = nearestEnemy.mesh.position.x - state.myConfig.x;
+                    const dz = nearestEnemy.mesh.position.z - state.myConfig.z;
+                    state.myConfig.rotY = Math.atan2(dx, dz);
+                    if (nearestDist > 2.2) {
+                        const step = Math.min(2.0, nearestDist - 1.6);
+                        state.myConfig.x += (dx / nearestDist) * step;
+                        state.myConfig.z += (dz / nearestDist) * step;
+                    }
+                }
+
                 const kheDmgMult = state.kheBuffTimer > 0 ? 1.5 : 1.0;
                 const kheRangeMult = state.kheBuffTimer > 0 ? 1.35 : 1.0;
 
-                let range = 4.0 * kheRangeMult;
-                let dmg = Math.round(30 * kheDmgMult);
+                let range = 4.8 * kheRangeMult;
+                let dmg = Math.round(32 * kheDmgMult);
 
                 if (skillType === 'skill1') {
                     if (state.cooldowns.skill1 > 0) return;
                     state.cooldowns.skill1 = 3.5;
-                    range = 5.8 * kheRangeMult;
-                    dmg = Math.round(52 * kheDmgMult);
+                    range = 6.5 * kheRangeMult;
+                    dmg = Math.round(55 * kheDmgMult);
                     sfx.playSkill();
                 } else if (skillType === 'skill2') {
                     if (state.cooldowns.skill2 > 0) return;
                     state.cooldowns.skill2 = 6.5;
                     state.shieldActiveTimer = 4.5;
-                    range = 5.0 * kheRangeMult;
-                    dmg = Math.round(40 * kheDmgMult);
+                    range = 5.5 * kheRangeMult;
+                    dmg = Math.round(42 * kheDmgMult);
                     sfx.playSkill();
                     showToast('🛡️ Bật Khiên Hoàng Gia: Giảm 60% sát thương!');
                 } else if (skillType === 'ulti') {
                     if (state.cooldowns.ulti > 0) return;
                     state.cooldowns.ulti = 9.0;
-                    range = 8.2 * kheRangeMult;
-                    dmg = Math.round(95 * kheDmgMult);
+                    range = 9.0 * kheRangeMult;
+                    dmg = Math.round(98 * kheDmgMult);
                     sfx.playSkill();
                     showToast('🐉 Tuyệt Kỹ Bão Kiếm Nam Sách!');
                 } else {
@@ -1574,22 +1636,27 @@
             // =========================================================
             function startGameNow() {
                 try {
+                    state.inGame = true;
+
+                    // 1. Switch UI Overlays immediately first so player enters game right away
+                    const menuOverlay = document.getElementById('menu-overlay');
+                    const hudOverlay = document.getElementById('hud-overlay');
+                    if (menuOverlay) {
+                        menuOverlay.classList.add('hidden');
+                        menuOverlay.style.display = 'none';
+                    }
+                    if (hudOverlay) {
+                        hudOverlay.classList.remove('hidden');
+                        hudOverlay.style.display = 'flex';
+                        if (state.cleanHud) hudOverlay.classList.add('clean-hud-active');
+                    }
+
                     const nameInput = document.getElementById('input-player-name');
                     const roomInput = document.getElementById('input-room-code');
                     if (nameInput && nameInput.value.trim()) state.myConfig.name = nameInput.value.trim();
                     if (roomInput && roomInput.value.trim()) state.roomCode = roomInput.value.trim().toUpperCase();
 
-                    state.inGame = true;
                     if (lobbyPedestal) lobbyPedestal.visible = false;
-
-                    // Hide Lobby Menu, Show In-Game HUD
-                    const menuOverlay = document.getElementById('menu-overlay');
-                    const hudOverlay = document.getElementById('hud-overlay');
-                    if (menuOverlay) menuOverlay.classList.add('hidden');
-                    if (hudOverlay) {
-                        hudOverlay.classList.remove('hidden');
-                        if (state.cleanHud) hudOverlay.classList.add('clean-hud-active');
-                    }
 
                     // Update HUD Badges
                     const roomEl = document.getElementById('hud-room-code');
@@ -1723,7 +1790,7 @@
                 rebuildMyCharacterPreview();
             });
 
-            on('btn-random-char', 'click', () => {
+            function randomizeCharacter() {
                 const hairs = ['spiky', 'sidepart', 'long', 'twintail', 'bun', 'afro'];
                 const colors = ['#111827', '#78350f', '#facc15', '#ef4444', '#ec4899', '#38bdf8'];
                 const outfits = ['#2563eb', '#db2777', '#16a34a', '#eab308', '#9333ea', '#e11d48'];
@@ -1735,6 +1802,48 @@
                 state.myConfig.molePos = moles[Math.floor(Math.random() * moles.length)];
                 rebuildMyCharacterPreview();
                 sfx.playTone(600, 'sine', 0.1);
+            }
+            on('btn-random-char', 'click', randomizeCharacter);
+            on('btn-random-char-mobile', 'click', randomizeCharacter);
+
+            // Mobile Lobby Bottom Sheet Tab Switcher (Tab 1: Character, Tab 2: Room & Difficulty)
+            on('mob-tab-char', 'click', () => {
+                const pChar = document.getElementById('lobby-panel-char');
+                const pRoom = document.getElementById('lobby-panel-room');
+                const bChar = document.getElementById('mob-tab-char');
+                const bRoom = document.getElementById('mob-tab-room');
+                if (pChar) pChar.classList.remove('hidden');
+                if (pRoom) pRoom.classList.add('hidden');
+                if (bChar) bChar.className = 'mobile-tab-active py-1.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5';
+                if (bRoom) bRoom.className = 'py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center justify-center gap-1.5';
+            });
+
+            on('mob-tab-room', 'click', () => {
+                const pChar = document.getElementById('lobby-panel-char');
+                const pRoom = document.getElementById('lobby-panel-room');
+                const bChar = document.getElementById('mob-tab-char');
+                const bRoom = document.getElementById('mob-tab-room');
+                if (pChar) pChar.classList.add('hidden');
+                if (pRoom) {
+                    pRoom.classList.remove('hidden');
+                    pRoom.classList.add('flex');
+                }
+                if (bRoom) bRoom.className = 'mobile-tab-active py-1.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5';
+                if (bChar) bChar.className = 'py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center justify-center gap-1.5';
+            });
+
+            // Mobile Auto-Battle Toggle
+            on('btn-auto-battle', 'click', () => {
+                state.autoBattle = !state.autoBattle;
+                const lbl = document.getElementById('auto-battle-label');
+                const btn = document.getElementById('btn-auto-battle');
+                if (lbl) lbl.textContent = state.autoBattle ? 'Tự Đánh: BẬT' : 'Tự Đánh: Tắt';
+                if (btn) {
+                    btn.className = state.autoBattle
+                        ? 'btn-game pt-card px-2.5 py-1.5 rounded-xl text-[11px] font-black text-slate-950 gold-gradient border border-white flex items-center gap-1'
+                        : 'btn-game pt-card px-2.5 py-1.5 rounded-xl text-[11px] font-black text-amber-300 border border-amber-400/60 flex items-center gap-1';
+                }
+                showToast(state.autoBattle ? '🤖 Đã BẬT Tự Động Đánh & Giải Cứu trên điện thoại!' : 'Đã tắt Tự Động Đánh.');
             });
 
             // Difficulty buttons
@@ -1777,6 +1886,7 @@
 
             on('toggle-ai-bots', 'change', (e) => { state.fillWithBots = e.target.checked; });
             on('btn-start-game', 'click', startGameNow);
+            on('btn-start-game-mobile', 'click', startGameNow);
 
             // In-Game Clean HUD & Return to Lobby
             on('btn-clean-hud', 'click', () => {
@@ -1797,8 +1907,16 @@
             on('btn-open-menu', 'click', () => {
                 state.inGame = false;
                 if (lobbyPedestal) lobbyPedestal.visible = true;
-                document.getElementById('hud-overlay').classList.add('hidden');
-                document.getElementById('menu-overlay').classList.remove('hidden');
+                const hudOverlay = document.getElementById('hud-overlay');
+                const menuOverlay = document.getElementById('menu-overlay');
+                if (hudOverlay) {
+                    hudOverlay.classList.add('hidden');
+                    hudOverlay.style.display = 'none';
+                }
+                if (menuOverlay) {
+                    menuOverlay.classList.remove('hidden');
+                    menuOverlay.style.display = 'flex';
+                }
             });
 
             // In-Game Camera Zoom
@@ -1945,7 +2063,7 @@
             });
 
             // =========================================================
-            // 10. KEYBOARD, ANALOG JOYSTICK & CANVAS ORBIT CONTROLS
+            // 10. MULTI-TOUCH MOBILE JOYSTICK, PINCH-ZOOM & CAMERA
             // =========================================================
             const keys = {};
             window.addEventListener('keydown', (e) => {
@@ -1955,47 +2073,142 @@
             });
             window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
-            let joyX = 0, joyY = 0, joyActive = false;
+            let joyX = 0, joyY = 0, joyActive = false, joyTouchId = null;
             const joyZone = document.getElementById('joystick-zone');
             const joyKnob = document.getElementById('joystick-knob');
-            if (joyZone && joyKnob) {
-                const handleJoy = (clientX, clientY) => {
-                    const rect = joyZone.getBoundingClientRect();
-                    const cx = rect.left + rect.width / 2;
-                    const cy = rect.top + rect.height / 2;
-                    const maxR = rect.width * 0.36;
-                    let dx = clientX - cx;
-                    let dy = clientY - cy;
-                    const dist = Math.hypot(dx, dy);
-                    if (dist > maxR) {
-                        dx = (dx / dist) * maxR;
-                        dy = (dy / dist) * maxR;
-                    }
-                    joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
-                    joyX = dx / maxR;
-                    joyY = dy / maxR;
-                };
-                joyZone.addEventListener('pointerdown', (e) => {
+
+            function updateJoystickVisual(clientX, clientY) {
+                if (!joyZone || !joyKnob) return;
+                const rect = joyZone.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+                const maxR = rect.width * 0.38;
+                let dx = clientX - cx;
+                let dy = clientY - cy;
+                const dist = Math.hypot(dx, dy);
+                if (dist > maxR) {
+                    dx = (dx / dist) * maxR;
+                    dy = (dy / dist) * maxR;
+                }
+                joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+                joyX = dx / maxR;
+                joyY = dy / maxR;
+            }
+
+            function resetJoystick() {
+                joyActive = false;
+                joyTouchId = null;
+                joyX = 0;
+                joyY = 0;
+                if (joyKnob) joyKnob.style.transform = 'translate(0px, 0px)';
+            }
+
+            if (joyZone) {
+                // Dedicated multi-touch for Joystick so right-hand attacks/camera never interrupt movement
+                joyZone.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const t = e.changedTouches[0];
                     joyActive = true;
-                    handleJoy(e.clientX, e.clientY);
+                    joyTouchId = t.identifier;
+                    updateJoystickVisual(t.clientX, t.clientY);
+                }, { passive: false });
+
+                joyZone.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        const t = e.changedTouches[i];
+                        if (t.identifier === joyTouchId) {
+                            updateJoystickVisual(t.clientX, t.clientY);
+                        }
+                    }
+                }, { passive: false });
+
+                joyZone.addEventListener('touchend', (e) => {
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        if (e.changedTouches[i].identifier === joyTouchId) resetJoystick();
+                    }
                 });
-                window.addEventListener('pointermove', (e) => {
-                    if (joyActive) handleJoy(e.clientX, e.clientY);
+                joyZone.addEventListener('touchcancel', resetJoystick);
+
+                // Mouse fallback for PC
+                joyZone.addEventListener('mousedown', (e) => {
+                    joyActive = true;
+                    updateJoystickVisual(e.clientX, e.clientY);
                 });
-                window.addEventListener('pointerup', () => {
-                    joyActive = false;
-                    joyX = 0; joyY = 0;
-                    joyKnob.style.transform = 'translate(0px, 0px)';
+                window.addEventListener('mousemove', (e) => {
+                    if (joyActive && joyTouchId === null) updateJoystickVisual(e.clientX, e.clientY);
+                });
+                window.addEventListener('mouseup', () => {
+                    if (joyTouchId === null) resetJoystick();
                 });
             }
 
+            // Canvas Multi-Touch Camera Orbit + 2-Finger Pinch-to-Zoom (Lobby & In-Game)
             let camYaw = 0, isDraggingCam = false, prevX = 0, prevY = 0;
-            canvas.addEventListener('pointerdown', (e) => {
+            let camTouchId = null, lastPinchDist = 0;
+
+            canvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    lastPinchDist = Math.hypot(dx, dy);
+                } else if (e.changedTouches.length > 0 && camTouchId === null) {
+                    const t = e.changedTouches[0];
+                    if (t.identifier !== joyTouchId) {
+                        camTouchId = t.identifier;
+                        prevX = t.clientX;
+                        prevY = t.clientY;
+                    }
+                }
+            }, { passive: true });
+
+            canvas.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2) {
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    const dist = Math.hypot(dx, dy);
+                    if (lastPinchDist > 0) {
+                        const delta = (lastPinchDist - dist) * 0.015;
+                        if (!state.inGame) {
+                            setLobbyZoom(state.lobbyZoomDist + delta);
+                        } else {
+                            setCameraZoom(state.camZoomDist + delta * 1.6);
+                        }
+                    }
+                    lastPinchDist = dist;
+                    return;
+                }
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const t = e.changedTouches[i];
+                    if (t.identifier === camTouchId) {
+                        const dx = t.clientX - prevX;
+                        const dy = t.clientY - prevY;
+                        prevX = t.clientX;
+                        prevY = t.clientY;
+                        if (!state.inGame) {
+                            state.lobbyManualYaw += dx * 0.014;
+                            setLobbyZoom(state.lobbyZoomDist + dy * 0.008);
+                        } else {
+                            camYaw -= dx * 0.006;
+                        }
+                    }
+                }
+            }, { passive: true });
+
+            canvas.addEventListener('touchend', (e) => {
+                if (e.touches.length < 2) lastPinchDist = 0;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === camTouchId) camTouchId = null;
+                }
+            });
+
+            // PC Mouse Orbit Fallback
+            canvas.addEventListener('mousedown', (e) => {
                 isDraggingCam = true;
                 prevX = e.clientX;
                 prevY = e.clientY;
             });
-            window.addEventListener('pointermove', (e) => {
+            window.addEventListener('mousemove', (e) => {
                 if (!isDraggingCam || joyActive) return;
                 const dx = e.clientX - prevX;
                 const dy = e.clientY - prevY;
@@ -2008,7 +2221,7 @@
                     camYaw -= dx * 0.005;
                 }
             });
-            window.addEventListener('pointerup', () => { isDraggingCam = false; });
+            window.addEventListener('mouseup', () => { isDraggingCam = false; });
 
             window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / window.innerHeight;
@@ -2127,10 +2340,12 @@
                     } else {
                         myMesh.rotation.y = state.lobbyManualYaw;
                     }
+                    const isSmallScreen = window.innerWidth < 1024;
+                    const yOffset = isSmallScreen ? -0.28 : 0;
                     const targetZ = 33 + state.lobbyZoomDist;
-                    const targetY = state.lobbyTargetHeight + state.lobbyZoomDist * 0.1;
-                    camera.position.lerp(new THREE.Vector3(0, targetY, targetZ), 0.2);
-                    camera.lookAt(0, state.lobbyTargetHeight, 33);
+                    const targetY = state.lobbyTargetHeight + state.lobbyZoomDist * 0.08 + yOffset;
+                    camera.position.lerp(new THREE.Vector3(0, targetY, targetZ), 0.22);
+                    camera.lookAt(0, state.lobbyTargetHeight + yOffset, 33);
                     renderer.render(scene, camera);
                     return;
                 }
@@ -2146,18 +2361,31 @@
                     updateFoodHud();
                 }
 
-                // Update Skill Cooldowns
+                // Update Skill Cooldowns & HUD Labels
                 ['skill1', 'skill2', 'ulti', 'flash', 'heal'].forEach(k => {
-                    if (state.cooldowns[k] > 0) state.cooldowns[k] = Math.max(0, state.cooldowns[k] - dt);
+                    if (state.cooldowns[k] > 0) {
+                        state.cooldowns[k] = Math.max(0, state.cooldowns[k] - dt);
+                    }
+                });
+                const cdMap = [
+                    ['cd-skill1', state.cooldowns.skill1, 'Chiêu 1'],
+                    ['cd-skill2', state.cooldowns.skill2, 'Khiên'],
+                    ['cd-ulti',   state.cooldowns.ulti,   'ULTI'],
+                    ['cd-flash',  state.cooldowns.flash,  'Biến'],
+                    ['cd-heal',   state.cooldowns.heal,   'Hồi']
+                ];
+                cdMap.forEach(([id, val, defTxt]) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = val > 0 ? `${Math.ceil(val)}s` : defTxt;
                 });
 
-                // Road Food Pickups (Ăn Khế Vàng & Canh Cá Rô trên đường)
+                // Road Food Pickups (Ăn Khế Vàng & Canh Cá Rô trên đường - Tầm hút rộng 3.4m cho Mobile)
                 state.foodSpawns.forEach(fd => {
                     if (!fd.collected) {
                         fd.mesh.rotation.y += 2.2 * dt;
                         fd.mesh.position.y = 0.72 + Math.sin(elapsed * 3.5) * 0.14;
                         const dist = Math.hypot(fd.mesh.position.x - state.myConfig.x, fd.mesh.position.z - state.myConfig.z);
-                        if (dist < 2.2) {
+                        if (dist < 3.4) {
                             fd.collected = true;
                             fd.mesh.visible = false;
                             fd.respawnTimer = 14.0;
@@ -2178,12 +2406,12 @@
                     }
                 });
 
-                // Collectibles in Chapter 4 Stage 1
+                // Collectibles in Chapter 4 Stage 1 (Tầm hút rộng 3.2m trên ĐT)
                 state.collectibles.forEach(col => {
                     if (!col.collected) {
                         col.mesh.rotation.y += 2.5 * dt;
                         const d = Math.hypot(col.mesh.position.x - state.myConfig.x, col.mesh.position.z - state.myConfig.z);
-                        if (d < 2.3) {
+                        if (d < 3.2) {
                             col.collected = true;
                             col.mesh.visible = false;
                             state.collectedCount++;
@@ -2196,7 +2424,15 @@
                     }
                 });
 
-                // Player Movement
+                // Auto-prompt Puzzle or Rescue when walking near target on Mobile
+                if (state.chapter === 4 && state.stage === 3 && state.enemies.length === 0) {
+                    const dCage = Math.hypot(state.myConfig.x - 0, state.myConfig.z - (-38));
+                    if (dCage < 5.2 && !state.rescuedKien) {
+                        performInteract();
+                    }
+                }
+
+                // Player Movement (Joystick + Keyboard + Optional Mobile Auto-Battle)
                 let mx = joyX;
                 let mz = joyY;
                 if (keys['KeyW'] || keys['ArrowUp']) mz -= 1;
@@ -2204,34 +2440,69 @@
                 if (keys['KeyA'] || keys['ArrowLeft']) mx -= 1;
                 if (keys['KeyD'] || keys['ArrowRight']) mx += 1;
 
-                const len = Math.hypot(mx, mz);
-                const moveSpeed = 9.5 * (state.canhBuffTimer > 0 ? 1.45 : 1.0);
-                if (len > 0.05) {
-                    mx /= len; mz /= len;
-                    const forwardX = -Math.sin(camYaw);
-                    const forwardZ = -Math.cos(camYaw);
-                    const rightX = Math.cos(camYaw);
-                    const rightZ = -Math.sin(camYaw);
+                const moveLen = Math.hypot(mx, mz);
+                const speedBoost = state.canhBuffTimer > 0 ? 1.45 : 1.0;
+                const moveSpeed = 9.2 * speedBoost;
 
-                    const vx = (rightX * mx - forwardX * mz) * moveSpeed;
-                    const vz = (rightZ * mx - forwardZ * mz) * moveSpeed;
+                if (moveLen > 0.05) {
+                    const nx = mx / Math.max(1, moveLen);
+                    const nz = mz / Math.max(1, moveLen);
+                    const sinY = Math.sin(camYaw);
+                    const cosY = Math.cos(camYaw);
+                    const worldDx = nx * cosY + nz * sinY;
+                    const worldDz = nz * cosY - nx * sinY;
 
-                    state.myConfig.x = Math.max(-21, Math.min(21, state.myConfig.x + vx * dt));
-                    state.myConfig.z = Math.max(-41, Math.min(44, state.myConfig.z + vz * dt));
-                    state.myConfig.rotY = Math.atan2(vx, vz);
+                    state.myConfig.x = Math.max(-21, Math.min(21, state.myConfig.x + worldDx * moveSpeed * dt));
+                    state.myConfig.z = Math.max(-42, Math.min(44, state.myConfig.z + worldDz * moveSpeed * dt));
+                    state.myConfig.rotY = Math.atan2(worldDx, worldDz);
 
-                    // Walking limb swing
                     if (myMesh.userData && myMesh.userData.leftLeg) {
                         myMesh.userData.leftLeg.rotation.x = Math.sin(elapsed * 12) * 0.55;
                         myMesh.userData.rightLeg.rotation.x = -Math.sin(elapsed * 12) * 0.55;
                     }
+                } else if (state.autoBattle) {
+                    // Mobile Auto-Battle Assistant when toggled ON and player isn't touching joystick
+                    if (state.enemies.length > 0) {
+                        const en = state.enemies[0];
+                        const dx = en.mesh.position.x - state.myConfig.x;
+                        const dz = en.mesh.position.z - state.myConfig.z;
+                        const dist = Math.hypot(dx, dz);
+                        if (dist > 2.6) {
+                            state.myConfig.x += (dx / dist) * moveSpeed * dt;
+                            state.myConfig.z += (dz / dist) * moveSpeed * dt;
+                            state.myConfig.rotY = Math.atan2(dx, dz);
+                        } else if (Math.random() < 0.12) {
+                            performAttack(state.cooldowns.ulti <= 0 ? 'ulti' : (state.cooldowns.skill1 <= 0 ? 'skill1' : 'normal'));
+                        }
+                    } else if (state.chapter === 4 && state.stage === 1) {
+                        const nextCol = state.collectibles.find(c => !c.collected);
+                        if (nextCol) {
+                            const dx = nextCol.mesh.position.x - state.myConfig.x;
+                            const dz = nextCol.mesh.position.z - state.myConfig.z;
+                            const d = Math.hypot(dx, dz);
+                            if (d > 1.0) {
+                                state.myConfig.x += (dx / d) * moveSpeed * dt;
+                                state.myConfig.z += (dz / d) * moveSpeed * dt;
+                                state.myConfig.rotY = Math.atan2(dx, dz);
+                            }
+                        }
+                    } else if (state.chapter === 4 && state.stage === 3) {
+                        const dx = 0 - state.myConfig.x;
+                        const dz = -38 - state.myConfig.z;
+                        const d = Math.hypot(dx, dz);
+                        if (d > 2.5) {
+                            state.myConfig.x += (dx / d) * moveSpeed * dt;
+                            state.myConfig.z += (dz / d) * moveSpeed * dt;
+                        }
+                    }
                 }
 
+                // Apply Player Mesh Transform (Giant buff when eating Khế Vàng)
                 myMesh.position.set(state.myConfig.x, state.jumpY, state.myConfig.z);
                 myMesh.rotation.y = state.myConfig.rotY;
-                myMesh.scale.setScalar(state.kheBuffTimer > 0 ? 1.16 : 1.0);
+                myMesh.scale.setScalar(state.kheBuffTimer > 0 ? 1.25 : 1.0);
 
-                // AI Companions follow & help fight
+                // AI Companions Follow & Fight
                 state.aiBots.forEach(bot => {
                     if (state.enemies.length > 0) {
                         const target = state.enemies[0];
@@ -2239,13 +2510,13 @@
                         const dz = target.mesh.position.z - bot.mesh.position.z;
                         const d = Math.hypot(dx, dz);
                         if (d > 2.2) {
-                            bot.mesh.position.x += (dx / d) * 6.5 * dt;
-                            bot.mesh.position.z += (dz / d) * 6.5 * dt;
+                            bot.mesh.position.x += (dx / d) * 6.2 * dt;
+                            bot.mesh.position.z += (dz / d) * 6.2 * dt;
                             bot.mesh.rotation.y = Math.atan2(dx, dz);
                         } else {
                             bot.atkCd -= dt;
                             if (bot.atkCd <= 0) {
-                                bot.atkCd = 1.3;
+                                bot.atkCd = 1.25;
                                 target.hp -= 12;
                                 if (target.hp <= 0) {
                                     dynamicGroup.remove(target.mesh);
